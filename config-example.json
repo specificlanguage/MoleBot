@@ -1,6 +1,14 @@
 {
-  "token": bot id here
+  "token": "bot token",
   "guild_ids": [
     any guild ids you want to have full features
-  ]
+  ],
+
+  "enabled_cogs": [
+    "ServerUtils"
+  ],
+
+  "ServerUtils": {
+    "default_server": "default_server_mc_ip_here.com"
+  }
 }
