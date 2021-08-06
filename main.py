@@ -1,5 +1,6 @@
 import asyncio
 import json
+from cogs.RailUtils import get_aura_json, get_kani_json
 from discord import Intents, Embed, File
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
@@ -38,6 +39,9 @@ async def mole(ctx: SlashContext):
 
 @bot.event
 async def on_ready():
+    print("Grabbing latest rail json files...")
+    get_aura_json()
+    get_kani_json()
     print("Ready!")
 
 
