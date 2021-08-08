@@ -1,6 +1,6 @@
 import asyncio
 import json
-from cogs.RailUtils import get_aura_json, get_kani_json
+from cogs.RailFinder import get_aura_json, get_kani_json
 from discord import Intents, Embed, File
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
