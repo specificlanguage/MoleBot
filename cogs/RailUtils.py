@@ -9,9 +9,29 @@ class RailUtils(commands.Cog, name="RailUtils"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+class RailNode:
+    def __init__(self, name: str, data: dict):
+        self.name = name
+        self.x = data["x"]
+        self.z = data["z"]
+        self.links = data["links"]
+
+    def __eq__(self, other):
+        if self.name == other.name:
+            return True
+        if self.x == other.x and self.z == other.z: # just in case
+            return True
+        return False
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.name
+
 
 def euclid(start, end):
-    return dist(start["x"] - end["x"]) + dist(start["z"] - end["z"])
+    return dist([start.x, start.z], [end.x, end.z])
 
 
 def get_kani_json():
@@ -31,61 +51,62 @@ def get_aura_json():
         json.dump(aura_json, fp)
     return aura_json
 
-
 def kani_astar(start: str, end: str):
     start_node = kani_item(start)
     end_node = kani_item(end)
 
     if start_node is None or end_node is None:
-        return None
+        return ""
 
-    open_list = {start}
-    closed_list = set()
+    open_list = [start_node]
+    closed_list = []
     path = []
-    dist = 0
-    g = 0
-    h = euclid(start_node, end_node)  # although we're measuring in blocks, this will give us a better result
+    tot_dist = 0
 
-    def find_lowest_node(conns: set):
+    print(start_node, end_node)
+
+    def find_lowest_node(conns: iter):
         best_node = None
         best_f = 0
 
         for dest in conns:
-            node = aura_json[dest]
-            temp_f_score = abs(euclid(node, start)) + abs(euclid(node, end))
+            temp_f_score = euclid(start_node, dest) + euclid(dest, end_node)
             if best_f == 0 or temp_f_score < best_f:
                 best_f = temp_f_score
-                best_node = node
+                best_node = dest
         return best_node
 
     # somewhat pseudocode below
     while len(open_list) != 0:
         current_node = find_lowest_node(open_list)
         open_list.remove(current_node)
-        closed_list.add(current_node)
+        closed_list.append(current_node)
         path.append(current_node)
 
-        g = euclid(start, current_node)
-        h = euclid(current_node, end)
+        g = euclid(start_node, current_node)
+        tot_dist += g
 
-        if current_node == end:
+        h = euclid(current_node, end_node)
+
+        if current_node == end_node:
             return path
 
-        for node in current_node["links"]:
-            if node not in closed_list:
-                open_list.add(node)
-            if node in open_list:
-                temp_g = euclid(start, node)
-                g_parent = euclid(start, current_node) + euclid(current_node, node)
-                if temp_g < g_parent:
-                    path.remove(current_node)
-                    path.append(node)
+        for node in current_node.links:
+            node = kani_item(node)
+            if node in closed_list: # if in closed list, skip
+                continue
+            elif node in open_list:
+                if g + euclid(current_node, node) < euclid(start_node, current_node):
+                    closed_list.append(node)
+            else:
+                open_list.append(node)
 
-    return None
+    return ""
+
 
 def kani_item(s: str):
     try:
-        return kani_json[s]
+        return RailNode(s, kani_json[s])
     except KeyError:
         return None
 
