@@ -39,9 +39,6 @@ async def mole(ctx: SlashContext):
 
 @bot.event
 async def on_ready():
-    print("Grabbing latest rail json files...")
-    get_aura_json()
-    get_kani_json()
     print("Ready!")
 
 
