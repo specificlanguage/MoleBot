@@ -15,7 +15,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                        description="Ping the default server or another server (note this cannot ping Bedrock servers)",
                        guild_ids=main.CONFIG["guild_ids"],
                        options=[create_option(name="server_ip",
-                                              description="Enter an ip different",
+                                              description="Enter a server IP (will default to CivClassic)",
                                               option_type=3,
                                               required=False)])
     async def ping(self, ctx: SlashContext, server_ip=config["default_server"]):

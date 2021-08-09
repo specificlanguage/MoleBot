@@ -4,7 +4,10 @@ import requests, json
 from math import dist
 
 class RailNode:
-    def __init__(self, name: str, data: dict, rail_type: Optional[str] = "KANI"):
+    def __init__(self, name: str, data: dict,
+                 rail_type: Optional[str] = "KANI",
+                 station: Optional[bool] = False,
+                 switch: Optional[bool] = False):
         self.name = name
         self.x = data["x"]
         self.z = data["z"]
@@ -13,6 +16,9 @@ class RailNode:
         self.g = 0
         self.parent = None  # must be type RailNode
         self.rail_type = rail_type
+        self.station = data["station"] if not KeyError else False
+        self.switch = data["switch"] if not KeyError else False
+        self.badlinks = data["badlinks"] if not KeyError else []
 
     def __eq__(self, other):
         if self.name == other.name:
@@ -38,6 +44,10 @@ def euclid(start, end):
     return dist([start.x, start.z], [end.x, end.z])
 
 
+def taxi(start, end):
+    return sum(abs(start.x - end.x), abs(start.z - end.z))
+
+
 def get_kani_json():
     r = requests.get("https://raw.githubusercontent.com/Ameliorate/KANI/master/docs/export.json")
     kani_json = r.json()
@@ -58,11 +68,12 @@ def get_aura_json():
 
 def reconstruct_path(node, start):
     path = [node]
+    tot_dist = 0
     while node != start:
-        print(node.parent)
+        tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
         node = node.parent
         path.append(node)
-    return path
+    return path, tot_dist
 
 
 def find_kani_route(start: str, end: str):
@@ -103,19 +114,24 @@ def astar(start_node: RailNode, end_node: RailNode):
         open_list.remove(current_node)
         closed_list.append(current_node)
         current_node.g = euclid(start_node, current_node)
-        tot_dist += current_node.g
-        if current_node == end_node:
-            print(start_node, end_node, current_node)
-            return reconstruct_path(current_node, start_node)[::-1], tot_dist
 
+        if current_node == end_node:
+            return reconstruct_path(current_node, start_node)[::-1]
+
+        print(current_node)
         for node in current_node.links:
             if current_node.rail_type == "AURA":
-                node = kani_node(node)
-            else:
                 node = aura_node(node)
+            else:
+                node = kani_node(node)
 
             if node in closed_list or node in open_list:
                 continue
+            if node.name in current_node.badlinks:
+                continue
+            if not(node.station or node.switch) and current_node != start_node:
+                continue  # can't leave node
+
             node.parent = current_node
             node.g = current_node.g + euclid(current_node, node)
             node.f = node.g + euclid(node, end_node)

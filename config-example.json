@@ -6,6 +6,7 @@
 
   "enabled_cogs": [
     "ServerUtils"
+    "RailUtils"
   ],
 
   "ServerUtils": {
