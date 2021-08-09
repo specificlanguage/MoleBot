@@ -9,16 +9,16 @@ class RailNode:
                  station: Optional[bool] = False,
                  switch: Optional[bool] = False):
         self.name = name
-        self.x = data["x"]
-        self.z = data["z"]
-        self.links = data["links"]
+        self.x = data.get("x", 0)
+        self.z = data.get("z", 0)
+        self.links = data.get("links", [])
         self.f = 0
         self.g = 0
         self.parent = None  # must be type RailNode
         self.rail_type = rail_type
-        self.station = data["station"] if not KeyError else False
-        self.switch = data["switch"] if not KeyError else False
-        self.badlinks = data["badlinks"] if not KeyError else []
+        self.station = data.get("station", False)
+        self.switch = data.get("switch", False)
+        self.badlinks = data.get("badlinks", [])
 
     def __eq__(self, other):
         if self.name == other.name:
@@ -45,7 +45,7 @@ def euclid(start, end):
 
 
 def taxi(start, end):
-    return sum(abs(start.x - end.x), abs(start.z - end.z))
+    return sum([abs(start.x - end.x), abs(start.z - end.z)])
 
 
 def get_kani_json():
@@ -67,13 +67,16 @@ def get_aura_json():
 
 
 def reconstruct_path(node, start):
-    path = [node]
+    path = []
+    if node.station or node.switch:
+        path.append(RailNode(name=node.name + ":exit", data={"x": node.x, "z": node.z}))
+    path.append(node)
     tot_dist = 0
     while node != start:
         tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
         node = node.parent
         path.append(node)
-    return path, tot_dist
+    return path[::-1], tot_dist # need to reverse path
 
 
 def find_kani_route(start: str, end: str):
@@ -93,7 +96,6 @@ def astar(start_node: RailNode, end_node: RailNode):
 
     open_list = [start_node]
     closed_list = []
-    tot_dist = 0
 
     def find_lowest_node(conns: iter):
         best_node = None
@@ -101,7 +103,6 @@ def astar(start_node: RailNode, end_node: RailNode):
 
         for dest in conns:
             if dest.f == 0.0:
-                dest.g = euclid(start_node, dest)
                 dest.f = euclid(start_node, dest) + euclid(dest, end_node)
             if best_f == 0.0 or dest.f < best_f:
                 best_node = dest
@@ -111,27 +112,34 @@ def astar(start_node: RailNode, end_node: RailNode):
 
     while len(open_list) != 0:
         current_node = find_lowest_node(open_list)
-        open_list.remove(current_node)
-        closed_list.append(current_node)
-        current_node.g = euclid(start_node, current_node)
+        open_list.remove(current_node)  # remove current node from open list
+        closed_list.append(current_node)  # add to closed list (to prevent backtracking)
 
+        # If we've reached our destination no need to continue
         if current_node == end_node:
-            return reconstruct_path(current_node, start_node)[::-1]
+            return reconstruct_path(current_node, start_node)
 
-        print(current_node)
+        # Can't leave node, only applicable as destination
+        if not (current_node.station or current_node.switch) and current_node != start_node:
+            continue
+
         for node in current_node.links:
             if current_node.rail_type == "AURA":
                 node = aura_node(node)
             else:
                 node = kani_node(node)
 
+            # Skip if already in closed/open, or it's not a good link
             if node in closed_list or node in open_list:
                 continue
             if node.name in current_node.badlinks:
                 continue
-            if not(node.station or node.switch) and current_node != start_node:
-                continue  # can't leave node
 
+            # Initialize g score if not already
+            if current_node.g == 0:
+                current_node.g = euclid(start_node, current_node)
+
+            # Add links & score
             node.parent = current_node
             node.g = current_node.g + euclid(current_node, node)
             node.f = node.g + euclid(node, end_node)
