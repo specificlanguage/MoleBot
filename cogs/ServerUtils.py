@@ -7,6 +7,7 @@ from discord_slash.utils.manage_commands import create_option
 
 config = main.CONFIG["ServerUtils"]
 
+
 class ServerUtils(commands.Cog, name="ServerUtils"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -37,7 +38,8 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 
     # other commands that will become part of this cog:
     # whereis [x] [y] [z] to find a location in the world
-    # civmap to give a link to civmap
+    # civmap [x] [y] [z] or civmap[name] to give a link to civmap
+    # civwiki to give a link to civwiki
 
 
 def setup(bot):

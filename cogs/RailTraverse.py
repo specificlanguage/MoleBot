@@ -3,11 +3,9 @@ from typing import Optional
 import requests, json
 from math import dist
 
+
 class RailNode:
-    def __init__(self, name: str, data: dict,
-                 rail_type: Optional[str] = "KANI",
-                 station: Optional[bool] = False,
-                 switch: Optional[bool] = False):
+    def __init__(self, name: str, data: dict):
         self.name = name
         self.x = data.get("x", 0)
         self.z = data.get("z", 0)
@@ -15,7 +13,6 @@ class RailNode:
         self.f = 0
         self.g = 0
         self.parent = None  # must be type RailNode
-        self.rail_type = rail_type
         self.station = data.get("station", False)
         self.switch = data.get("switch", False)
         self.badlinks = data.get("badlinks", [])
@@ -57,15 +54,6 @@ def get_kani_json():
     return kani_json
 
 
-def get_aura_json():
-    r = requests.get("https://raw.githubusercontent.com/auracc/aura-toml/main/computed.json")
-    aura_json = r.json()
-    with open("resources/aura.json", "w+") as fp:
-        fp.truncate(0) # clear file to reload it
-        json.dump(aura_json, fp)
-    return aura_json
-
-
 def reconstruct_path(node, start):
     path = []
     if node.station or node.switch:
@@ -82,12 +70,6 @@ def reconstruct_path(node, start):
 def find_kani_route(start: str, end: str):
     start_node = kani_node(start)
     end_node = kani_node(end)
-    return astar(start_node, end_node)
-
-#TODO: fix AURA A* to comply with JSON
-def find_aura_route(start: str, end: str):
-    start_node = aura_node(start)
-    end_node = aura_node(end)
     return astar(start_node, end_node)
 
 def astar(start_node: RailNode, end_node: RailNode):
@@ -124,10 +106,7 @@ def astar(start_node: RailNode, end_node: RailNode):
             continue
 
         for node in current_node.links:
-            if current_node.rail_type == "AURA":
-                node = aura_node(node)
-            else:
-                node = kani_node(node)
+            node = kani_node(node)
 
             # Skip if already in closed/open, or it's not a good link
             if node in closed_list or node in open_list:
@@ -154,12 +133,5 @@ def kani_node(s: str):
     except KeyError:
         return None
 
-def aura_node(s: str):
-    try:
-        return RailNode(s, aura_json["nodes"][s], rail_type="AURA")
-    except KeyError:
-        return None
-
 
 kani_json = get_kani_json()
-aura_json = get_aura_json()

@@ -1,5 +1,5 @@
-import main, discord
-from cogs.RailFinder import find_kani_route
+import main, discord, difflib
+from cogs.RailTraverse import find_kani_route, kani_json, kani_node
 from discord.ext import commands
 from discord_slash import cog_ext, SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
@@ -31,7 +31,8 @@ class RailUtils(commands.Cog, name="RailUtils"):
 
         if len(route) == 0:
             embed.add_field(name="KANI system:",
-                            value="*No route found. Make sure you typed your destination correctly.*")
+                            value="*No route found. Make sure you typed your destination correctly, use /find [dest]"
+                                  "to find your origin route*")
         else:
             route = " ".join([dest.name for dest in route])
             time = int(dist) / 8
@@ -40,8 +41,6 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             value="/dest {0} \n\n Travel Time: About {1}m{2}s".format(route, time_min, time_sec))
 
         await ctx.send(embed=embed, hidden=True)
-
-
 
 
 def setup(bot):
