@@ -16,6 +16,7 @@ class RailNode:
         self.station = data.get("station", False)
         self.switch = data.get("switch", False)
         self.badlinks = data.get("badlinks", [])
+        self.stop = not (self.station or self.switch)
 
     def __eq__(self, other):
         if self.name == other.name:
@@ -36,6 +37,19 @@ class RailNode:
         except TypeError:
             return self.name
 
+# adaptation for AURA system
+class AuraNode(RailNode):
+    def __init__(self, name: str, data: dict):
+        super().__init__(name, data)
+        self.badlinks = data.get("bad_links", []).append(data.get("unsafe_links", []))
+        self.stop = data.get("stop", False)
+        self.switch = data.get("junction", False)
+        self.stopjunction = data.get("stopjunction", False)
+        self.junctionstop = data.get("junctionstop", False)
+        self.crossing = data.get("crossing", False)
+        self.line = data.get("line", False)
+        self.dest = data.get("dest", "")
+
 
 def euclid(start, end):
     return dist([start.x, start.z], [end.x, end.z])
@@ -53,6 +67,14 @@ def get_kani_json():
         json.dump(kani_json, fp)
     return kani_json
 
+def get_aura_json():
+    r = requests.get("https://raw.githubusercontent.com/auracc/aura-toml/main/computed.json")
+    aura_json = r.json()
+    with open("resources/aura.json", "w+") as fp:
+        fp.truncate(0)  # clear file to reload it
+        json.dump(aura_json, fp)
+    return aura_json
+
 
 def reconstruct_path(node, start):
     path = []
@@ -67,12 +89,34 @@ def reconstruct_path(node, start):
     return path[::-1], tot_dist # need to reverse path
 
 
+def reconstruct_aura_path(node, start):
+    path = [node]
+    tot_dist = 0
+
+    # TODO: determine line routed direction
+    # TODO: if line, recalculate distance between nodes
+    while node != start:
+        tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
+        node = node.parent
+        path.append(node)
+    return path[::-1], tot_dist  # need to reverse path
+
+
+# Entry points for AURA/KANI path finding
 def find_kani_route(start: str, end: str):
     start_node = kani_node(start)
     end_node = kani_node(end)
     return astar(start_node, end_node)
 
+
+def find_aura_route(start: str, end: str):
+    start_node = aura_node(start)
+    end_node = aura_node(end)
+    return astar(start_node, end_node)
+
+
 def astar(start_node: RailNode, end_node: RailNode):
+
     if start_node is None or end_node is None:
         return [], 0
 
@@ -94,19 +138,30 @@ def astar(start_node: RailNode, end_node: RailNode):
 
     while len(open_list) != 0:
         current_node = find_lowest_node(open_list)
+        print(current_node)
         open_list.remove(current_node)  # remove current node from open list
         closed_list.append(current_node)  # add to closed list (to prevent backtracking)
 
         # If we've reached our destination no need to continue
         if current_node == end_node:
+            if type(current_node) is AuraNode:
+                return reconstruct_aura_path(current_node, start_node)
             return reconstruct_path(current_node, start_node)
 
         # Can't leave node, only applicable as destination
-        if not (current_node.station or current_node.switch) and current_node != start_node:
+        if current_node.stop and current_node != start_node:
             continue
 
+        # For every connection in the nodes
         for node in current_node.links:
-            node = kani_node(node)
+            if type(current_node) is AuraNode:
+                node = aura_node(node)
+                if node.line:
+                    # in order to make proper calculations, just have it be the same location.
+                    node.x = current_node.x
+                    node.z = current_node.z
+            else:
+                node = kani_node(node)
 
             # Skip if already in closed/open, or it's not a good link
             if node in closed_list or node in open_list:
@@ -133,5 +188,11 @@ def kani_node(s: str):
     except KeyError:
         return None
 
+def aura_node(s: str):
+    try:
+        return AuraNode(s, aura_json["nodes"][s])
+    except KeyError:
+        return None
 
+aura_json = get_aura_json()
 kani_json = get_kani_json()
