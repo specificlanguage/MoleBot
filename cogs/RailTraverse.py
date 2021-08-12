@@ -15,7 +15,7 @@ class RailNode:
         self.parent = None  # must be type RailNode
         self.station = data.get("station", False)
         self.switch = data.get("switch", False)
-        self.badlinks = data.get("badlinks", [])
+        self.badlinks = data.get("BadLinks", {})
         self.stop = not (self.station or self.switch)
 
     def __eq__(self, other):
@@ -41,7 +41,8 @@ class RailNode:
 class AuraNode(RailNode):
     def __init__(self, name: str, data: dict):
         super().__init__(name, data)
-        self.badlinks = data.get("bad_links", []).append(data.get("unsafe_links", []))
+        self.badlinks = data.get("bad_links", {})
+        self.unsafelinks = data.get("unsafe_links", [])
         self.stop = data.get("stop", False)
         self.switch = data.get("junction", False)
         self.stopjunction = data.get("stopjunction", False)
@@ -49,6 +50,8 @@ class AuraNode(RailNode):
         self.crossing = data.get("crossing", False)
         self.line = data.get("line", False)
         self.dest = data.get("dest", "")
+        self.dest_a = data.get("dest_a", "")  # Accounts for AURA line nodes
+        self.dest_b = data.get("dest_b", "")
 
 
 def euclid(start, end):
@@ -76,26 +79,50 @@ def get_aura_json():
     return aura_json
 
 
-def reconstruct_path(node, start):
+def reconstruct_path(node: RailNode, start: RailNode):
     path = []
     if node.station or node.switch:
         path.append(RailNode(name=node.name + ":exit", data={"x": node.x, "z": node.z}))
-    path.append(node)
+    path.append(node.name)
     tot_dist = 0
+    loop = 0
     while node != start:
+        print(loop, node)
         tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
-        node = node.parent
-        path.append(node)
-    return path[::-1], tot_dist # need to reverse path
+        if node.name in node.parent.badlinks.keys():
+            name = node.name
+            node = node.parent
+            path.append(node.badlinks[name])
+        else:
+            node = node.parent
+            path.append(node.name)
+
+        new_path = []
+        for i in path:
+            a = (i.split(" "))
+            for j in a[::-1]:  # This is such a hacky solution and I really don't like it
+                new_path.append(j)
+        path = new_path
+
+        lookup = set()
+        path = [x for x in path if x not in lookup and lookup.add(x) is None]
+
+        print(path)
+
+    return path[::-1], tot_dist  # need to reverse path
 
 
-def reconstruct_aura_path(node, start):
+# IMPORTANT NOTE: this will return list of strings, not a list of nodes.
+# Currently unable to fix this due to how AURA nodes are structured.
+def reconstruct_aura_path(node: AuraNode, start: AuraNode):
     path = [node]
     tot_dist = 0
 
     # TODO: determine line routed direction
     # TODO: if line, recalculate distance between nodes
     while node != start:
+        if node.line:
+            pass
         tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
         node = node.parent
         path.append(node)
@@ -112,6 +139,12 @@ def find_kani_route(start: str, end: str):
 def find_aura_route(start: str, end: str):
     start_node = aura_node(start)
     end_node = aura_node(end)
+
+    if start_node.switch or end_node.switch or \
+        start_node.crossing or end_node.crossing or \
+        start_node.line or end_node.line:
+        return [], -1  # not a valid pair
+
     return astar(start_node, end_node)
 
 
@@ -166,8 +199,9 @@ def astar(start_node: RailNode, end_node: RailNode):
             # Skip if already in closed/open, or it's not a good link
             if node in closed_list or node in open_list:
                 continue
-            if node.name in current_node.badlinks:
-                continue
+            if type(current_node) is AuraNode:
+                if node in current_node.unsafelinks:
+                    continue
 
             # Initialize g score if not already
             if current_node.g == 0:

@@ -34,7 +34,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             value="*No route found. Make sure you typed your destination correctly, use /find [dest]"
                                   "to find your origin route*")
         else:
-            route = " ".join([dest.name for dest in route])
+            route = " ".join(route)
             time = int(dist) / 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="KANI system:",
