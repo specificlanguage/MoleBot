@@ -1,5 +1,5 @@
 import main, discord, difflib
-from cogs.RailTraverse import find_kani_route, kani_json, kani_node
+from cogs.RailTraverse import find_kani_route, find_aura_route
 from discord.ext import commands
 from discord_slash import cog_ext, SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
@@ -23,22 +23,30 @@ class RailUtils(commands.Cog, name="RailUtils"):
                                 ]
                        )
     async def dest(self, ctx: SlashContext, origin: str, destination: str):
-        route, dist = find_kani_route(origin.lower(), destination.lower())
+        kani_route, kani_dist = find_kani_route(origin.lower(), destination.lower())
+        aura_route, aura_dist = find_aura_route(origin.lower(), destination.lower())
 
         embed = discord.Embed(title="Route from {0} to {1}:".format(origin, destination),
                               color=discord.Color.red())
-        # Only supports KANI for right now
-
-        if len(route) == 0:
+        if len(kani_route) == 0:
             embed.add_field(name="KANI system:",
-                            value="*No route found. Make sure you typed your destination correctly, use /find [dest]"
-                                  "to find your origin route*")
+                            value="*No route found. Make sure you typed your destinations correctly.*")
         else:
-            route = " ".join(route)
-            time = int(dist) / 8
+            kani_route = " ".join(kani_route)
+            time = int(kani_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="KANI system:",
-                            value="/dest {0} \n\n Travel Time: About {1}m{2}s".format(route, time_min, time_sec))
+                            value="/dest {0} \n\n Travel Time: About {1}m{2}s".format(kani_route, time_min, time_sec))
+
+        if len(aura_route) == 0:
+            embed.add_field(name="AURA system:",
+                            value="*No route found. Make sure you typed your destinations correctly.*")
+        else:
+            aura_route = " ".join(aura_route)
+            time = int(aura_dist) // 8
+            time_min, time_sec = int(time // 60), int(time % 60)
+            embed.add_field(name="AURA system:",
+                            value="/dest {0} \n\n Travel Time: About {1}m{2}s".format(aura_route, time_min, time_sec))
 
         await ctx.send(embed=embed, hidden=True)
 
