@@ -67,6 +67,7 @@ def get_kani_json():
         json.dump(kani_json, fp)
     return kani_json
 
+
 def get_aura_json():
     r = requests.get("https://raw.githubusercontent.com/auracc/aura-toml/main/computed.json")
     aura_json = r.json()

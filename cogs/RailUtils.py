@@ -1,5 +1,5 @@
 import main, discord, difflib
-from cogs.RailTraverse import find_kani_route, find_aura_route
+from cogs.RailTraverse import find_kani_route, find_aura_route, kani_node, aura_node
 from discord.ext import commands
 from discord_slash import cog_ext, SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
@@ -28,25 +28,37 @@ class RailUtils(commands.Cog, name="RailUtils"):
 
         embed = discord.Embed(title="Route from {0} to {1}:".format(origin, destination),
                               color=discord.Color.red())
-        if len(kani_route) == 0:
+
+        if len(kani_route) <= 0:
             embed.add_field(name="KANI system:",
                             value="*No route found. Make sure you typed your destinations correctly.*")
         else:
+            notices = ""
+            if kani_node(origin).switch:
+                notices += "**Notice: You are routing from a switch.**\n"
+            if kani_node(destination).switch:
+                notices += "**Notice: You are routing to a switch. You will need to disembark manually.**\n"
+
             kani_route = " ".join(kani_route)
             time = int(kani_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="KANI system:",
-                            value="/dest {0} \n\n Travel Time: About {1}m{2}s".format(kani_route, time_min, time_sec))
+                            value="/dest {0} \n\n{1} Travel Time: About {2}m{3}s \n\n".
+                            format(kani_route, notices, time_min, time_sec))
 
-        if len(aura_route) == 0:
+        if len(aura_route) <= 0:
             embed.add_field(name="AURA system:",
-                            value="*No route found. Make sure you typed your destinations correctly.*")
+                            value="*No route found. Make sure you typed your destinations correctly.\n"
+                                  "You may also be routing from a switch/destination/line in AURA.*")
+
         else:
+            notices = ""    # FYI for later
             aura_route = " ".join(aura_route)
             time = int(aura_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="AURA system:",
-                            value="/dest {0} \n\n Travel Time: About {1}m{2}s".format(aura_route, time_min, time_sec))
+                            value="/dest {0} \n\n{1} Travel Time: About {2}m{3}s \n\n".
+                            format(aura_route, notices, time_min, time_sec))
 
         await ctx.send(embed=embed, hidden=True)
 
