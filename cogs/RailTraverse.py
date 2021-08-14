@@ -247,11 +247,22 @@ def kani_node(s: str):
     except KeyError:
         return None
 
+
 def aura_node(s: str):
-    try:
+    nodes = aura_json.get("nodes")
+    find_node = nodes.get("s")
+    if find_node is not None:
         return AuraNode(s, aura_json["nodes"][s])
-    except KeyError:
-        return None
+    valid_keys = []
+    for d in nodes.keys():
+        if s.lower() in [name.lower() for name in nodes.get(d).get("name", [])]:
+            valid_keys.append(d)
+            break
+
+    if len(valid_keys) != 0:
+        return AuraNode(valid_keys[0], aura_json["nodes"][valid_keys[0]])
+    return None
+
 
 aura_json = get_aura_json()
 kani_json = get_kani_json()
