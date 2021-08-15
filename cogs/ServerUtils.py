@@ -1,11 +1,9 @@
-import discord, datetime
-import main
-from mcstatus import MinecraftServer
+import datetime
+import discord
 from discord.ext import commands
-from discord_slash import cog_ext, SlashCommand, SlashContext
+from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
-
-config = main.CONFIG["ServerUtils"]
+from mcstatus import MinecraftServer
 
 
 class ServerUtils(commands.Cog, name="ServerUtils"):
@@ -14,12 +12,11 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 
     @cog_ext.cog_slash(name="ping",
                        description="Ping the default server or another server (note this cannot ping Bedrock servers)",
-                       guild_ids=main.CONFIG["guild_ids"],
                        options=[create_option(name="server_ip",
                                               description="Enter a server IP (will default to CivClassic)",
                                               option_type=3,
                                               required=False)])
-    async def ping(self, ctx: SlashContext, server_ip=config["default_server"]):
+    async def ping(self, ctx: SlashContext, server_ip="mc.civclassic.com"):
         # This feels very tacky, may want to change this later
         server = MinecraftServer.lookup(server_ip)
         try:

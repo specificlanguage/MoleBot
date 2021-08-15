@@ -1,4 +1,5 @@
 import asyncio
+import os
 import json
 from cogs.RailTraverse import get_aura_json, get_kani_json
 from discord import Intents, Embed, File
@@ -11,16 +12,10 @@ class Bot(commands.Bot):
         super().__init__(command_prefix="%", help_command=None, intents=intents)
 
 
-def load_config():
-    with open("config.json") as json_data_file:
-        data = json.load(json_data_file)
-    return data
-
-
-CONFIG = load_config()
 bot = Bot(intents=Intents.default())
 slash = SlashCommand(bot, sync_commands=True)
-for extension in CONFIG["enabled_cogs"]:
+cogs = ["RailUtils", "ServerUtils"]
+for extension in cogs:
     bot.load_extension("cogs." + extension)
 
 
@@ -31,7 +26,7 @@ async def on_message(message):
         await asyncio.sleep(3)
 
 
-@slash.slash(name="mole", description="Mole guy", guild_ids=CONFIG["guild_ids"])
+@slash.slash(name="mole", description="Mole guy")
 async def mole(ctx: SlashContext):
     await ctx.send(file=File('resources/montymole.gif'))
 
@@ -42,4 +37,4 @@ async def on_ready():
     print("Ready!")
 
 
-bot.run(CONFIG["token"])
+bot.run(os.environ["token"])

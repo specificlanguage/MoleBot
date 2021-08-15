@@ -11,7 +11,6 @@ class RailUtils(commands.Cog, name="RailUtils"):
 
     @cog_ext.cog_slash(name="dest",
                        description="Finds /dest command for KANI system",
-                       guild_ids=main.CONFIG["guild_ids"],
                        options=[create_option(name="origin",
                                               description="Enter an origin station",
                                               option_type=3,
@@ -52,7 +51,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                                   "You may also be routing from a switch/destination/line in AURA.*")
 
         else:
-            notices = ""    # FYI for later
+            notices = ""  # FYI for later
 
             aura_origin = aura_node(origin)
             aura_dest = aura_node(destination)
@@ -62,8 +61,8 @@ class RailUtils(commands.Cog, name="RailUtils"):
                 notices += "*AURA Notice: Your origin has a surface station that you may want to check for better " \
                            "routes. Add '(surface)' to your origin input.*\n "
             if aura_dest.name + "-surface" in aura_json["nodes"]:
-                notices += "*AURA Notice: Your destination has a surface station that you may want to check for better " \ 
-                           "routes. Add '(surface)' to your destination input.*\n"
+                notices += "*AURA Notice: Your destination has a surface station that you may want to check for " \
+                           "better routes. Add '(surface)' to your destination input.*\n"
             if aura_dest.type not in valid_stops:
                 notices += "*AURA Notice: You are not routing to a stop.*\n"
 
