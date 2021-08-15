@@ -1,5 +1,5 @@
 import main, discord, difflib
-from cogs.RailTraverse import find_kani_route, find_aura_route, kani_node, aura_node
+from cogs.RailTraverse import find_kani_route, find_aura_route, kani_node, aura_node, aura_json
 from discord.ext import commands
 from discord_slash import cog_ext, SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
@@ -35,9 +35,9 @@ class RailUtils(commands.Cog, name="RailUtils"):
         else:
             notices = ""
             if kani_node(origin).switch:
-                notices += "**Notice: You are routing from a switch.**\n"
+                notices += "**KANI Notice: You are routing from a switch.**\n"
             if kani_node(destination).switch:
-                notices += "**Notice: You are routing to a switch. You will need to disembark manually.**\n"
+                notices += "**KANI Notice: You are routing to a switch. You will need to disembark manually.**\n"
 
             kani_route = " ".join(kani_route)
             time = int(kani_dist) // 8
@@ -53,6 +53,14 @@ class RailUtils(commands.Cog, name="RailUtils"):
 
         else:
             notices = ""    # FYI for later
+
+            if aura_node(origin).name + "-surface" in aura_json["nodes"]:
+                notices += "AURA Notice: Your origin has a surface station that you may want to check for better " \
+                           "routes.\n "
+            if aura_node(destination).name + "-surface" in aura_json["nodes"]:
+                notices += "AURA Notice: Your destination has a surface station that you may want to check for better " \
+                           "routes.\n"
+
             aura_route = " ".join(aura_route)
             time = int(aura_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
