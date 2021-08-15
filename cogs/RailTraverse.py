@@ -150,7 +150,7 @@ def reconstruct_aura_path(node: AuraNode, start: AuraNode):
 
     # Special case when the first stop needs to access a line to get on the system
     if node.link_dests:
-        path.append(node.link_dests[last_node.name])
+        path.append(node.link_dests.get(last_node.name, ""))
 
     return path[::-1], tot_dist
 
@@ -225,7 +225,7 @@ def astar(start_node: RailNode, end_node: RailNode):
             # Skip if already in closed/open, or it's not a good link
             if node in closed_list or node in open_list:
                 continue
-            if type(current_node) is AuraNode and node in current_node.unsafelinks:
+            if type(current_node) is AuraNode and node.name in current_node.unsafelinks:
                 continue
 
             # Initialize g score if not already
@@ -250,7 +250,7 @@ def kani_node(s: str):
 
 def aura_node(s: str):
     nodes = aura_json.get("nodes")
-    find_node = nodes.get("s")
+    find_node = nodes.get(s)
     if find_node is not None:
         return AuraNode(s, aura_json["nodes"][s])
     valid_keys = []
