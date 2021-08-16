@@ -31,10 +31,9 @@ async def mole(ctx: SlashContext):
     await ctx.send(file=File('resources/montymole.gif'))
 
 
-
 @bot.event
 async def on_ready():
     print("Ready!")
 
 
-bot.run(os.environ["token"])
+bot.run(os.environ.get("token"))

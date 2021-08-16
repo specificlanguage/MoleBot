@@ -1,8 +1,9 @@
-import main, discord, difflib
-from cogs.RailTraverse import find_kani_route, find_aura_route, kani_node, aura_node, aura_json
+import discord
 from discord.ext import commands
-from discord_slash import cog_ext, SlashCommand, SlashContext
+from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
+
+from cogs.RailTraverse import find_kani_route, find_aura_route, kani_node, aura_node, aura_json
 
 
 class RailUtils(commands.Cog, name="RailUtils"):

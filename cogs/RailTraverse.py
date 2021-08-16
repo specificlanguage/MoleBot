@@ -1,7 +1,7 @@
-from typing import Optional
-
-import requests, json
 from math import dist
+
+import json
+import requests
 
 
 class RailNode:
@@ -49,14 +49,6 @@ class AuraNode(RailNode):
         self.dest_b = data.get("dest_b", "")
         self.dest_junction = data.get("dest_junction", "")
         self.link_dests = data.get("link_dests", {})
-
-
-def euclid(start, end):
-    return dist([start.x, start.z], [end.x, end.z])
-
-
-def taxi(start, end):
-    return sum([abs(start.x - end.x), abs(start.z - end.z)])
 
 
 def get_kani_json():
