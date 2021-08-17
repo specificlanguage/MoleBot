@@ -92,10 +92,10 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                 page = page.lower().capitalize()
                 url, success = get_civwiki_page(page)
                 if not success:
-                    page_list += "<{0}>*\n".format(page)
+                    page_list += "<{0}>\*\n".format(page)
                 else:
                     page_list += "<{0}>\n".format(url)
-            page_list += "\n * - This page might not exist yet!"
+            page_list += "\* - This page might not exist yet!"
             await ctx.reply(page_list, mention_author=False)
 
     # other commands that will become part of this cog:

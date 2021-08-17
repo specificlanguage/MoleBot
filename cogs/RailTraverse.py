@@ -2,6 +2,7 @@ from discord.ext import tasks
 from math import dist
 import json
 import requests
+import logging
 
 
 class RailNode:
@@ -68,9 +69,12 @@ def load_aura_json():
     with open("resources/aura.json", "r") as fp:
         return json.load(fp)
 
+
 @tasks.loop(hours=3.0)
 async def get_kani_json():
-    print("Grabbing KANI json file...")
+    logging.info("Grabbing KANI JSON file from GitHub at "
+                 "https://raw.githubusercontent.com/Ameliorate/KANI/master/docs/export.json")
+
     r = requests.get("https://raw.githubusercontent.com/Ameliorate/KANI/master/docs/export.json")
     k = r.json()
     with open("resources/kani.json", "w+") as fp:
@@ -78,11 +82,14 @@ async def get_kani_json():
         json.dump(k, fp)
     global KANI_JSON
     KANI_JSON = load_kani_json()
-    print("Finished!")
+    logging.info("Finished grabbing KANI JSON!")
+
 
 @tasks.loop(hours=3.0)
 async def get_aura_json():
-    print("Grabbing AURA json file...")
+    logging.info("Grabbing AURA JSON file from Github at "
+                 "https://raw.githubusercontent.com/auracc/aura-toml/main/computed.json")
+
     r = requests.get("https://raw.githubusercontent.com/auracc/aura-toml/main/computed.json")
     a = r.json()
     with open("resources/aura.json", "w+") as fp:
@@ -90,7 +97,7 @@ async def get_aura_json():
         json.dump(a, fp)
     global AURA_JSON
     AURA_JSON = load_aura_json()
-    print("Finished!")
+    logging.info("Finished grabbing AURA JSON!")
 
 
 def reconstruct_path(node: RailNode, start: RailNode):

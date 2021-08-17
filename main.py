@@ -1,6 +1,8 @@
 import asyncio
 import os
-from discord import Intents, Embed, File
+import log
+import logging
+from discord import Intents, File
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
 
@@ -31,7 +33,7 @@ async def mole(ctx: SlashContext):
 
 @bot.event
 async def on_ready():
-    print("Ready!")
+    logging.info("MoleBot is ready!")
 
-
+log.init_logger()
 bot.run(os.environ.get("token"))
