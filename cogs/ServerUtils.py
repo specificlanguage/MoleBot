@@ -75,24 +75,27 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                                               option_type=3,
                                               required=True)])
     async def civwiki(self, ctx: SlashContext, page_name: str):
+        page_name = page_name.lower().capitalize()
         url, success = get_civwiki_page(page_name)
         if not success:
-            await ctx.send("<{0}>\n*Warning: No page found.*".format(url))
+            await ctx.send("<{0}>\n*This page might not exist yet!*".format(url))
         else:
             await ctx.send("<{0}>".format(url))
 
     @commands.Cog.listener("on_message")
     async def wikipage(self, ctx):
         wiki_pattern = "\[{2}([^\]\n]+) *\]{2}"
-        pages = list(set(re.findall(wiki_pattern, ctx.content)))
+        pages = re.findall(wiki_pattern, ctx.content)
         if len(pages) != 0:
             page_list = ""
             for page in pages[:5]:
+                page = page.lower().capitalize()
                 url, success = get_civwiki_page(page)
                 if not success:
-                    page_list += "*Warning: No page found for {0}*\n".format(page)
+                    page_list += "<{0}>*\n".format(page)
                 else:
                     page_list += "<{0}>\n".format(url)
+            page_list += "\n * - This page might not exist yet!"
             await ctx.reply(page_list, mention_author=False)
 
     # other commands that will become part of this cog:

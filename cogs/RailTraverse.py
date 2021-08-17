@@ -1,5 +1,5 @@
+from discord.ext import tasks
 from math import dist
-
 import json
 import requests
 
@@ -50,28 +50,47 @@ class AuraNode(RailNode):
         self.dest_junction = data.get("dest_junction", "")
         self.link_dests = data.get("link_dests", {})
 
+
 def euclid(start, end):
     return dist([start.x, start.z], [end.x, end.z])
+
 
 def taxi(start, end):
     return sum([abs(start.x - end.x), abs(start.z - end.z)])
 
-def get_kani_json():
+
+def load_kani_json():
+    with open("resources/kani.json", "r") as fp:
+        return json.load(fp)
+
+
+def load_aura_json():
+    with open("resources/aura.json", "r") as fp:
+        return json.load(fp)
+
+@tasks.loop(hours=3.0)
+async def get_kani_json():
+    print("Grabbing KANI json file...")
     r = requests.get("https://raw.githubusercontent.com/Ameliorate/KANI/master/docs/export.json")
-    kani_json = r.json()
+    k = r.json()
     with open("resources/kani.json", "w+") as fp:
-        fp.truncate(0) # clear file to reload it
-        json.dump(kani_json, fp)
-    return kani_json
+        fp.truncate(0)  # clear file to reload it
+        json.dump(k, fp)
+    global KANI_JSON
+    KANI_JSON = load_kani_json()
+    print("Finished!")
 
-
-def get_aura_json():
+@tasks.loop(hours=3.0)
+async def get_aura_json():
+    print("Grabbing AURA json file...")
     r = requests.get("https://raw.githubusercontent.com/auracc/aura-toml/main/computed.json")
-    aura_json = r.json()
+    a = r.json()
     with open("resources/aura.json", "w+") as fp:
         fp.truncate(0)  # clear file to reload it
-        json.dump(aura_json, fp)
-    return aura_json
+        json.dump(a, fp)
+    global AURA_JSON
+    AURA_JSON = load_aura_json()
+    print("Finished!")
 
 
 def reconstruct_path(node: RailNode, start: RailNode):
@@ -240,16 +259,16 @@ def astar(start_node: RailNode, end_node: RailNode):
 
 def kani_node(s: str):
     try:
-        return RailNode(s, kani_json[s])
+        return RailNode(s, KANI_JSON[s])
     except KeyError:
         return None
 
 
 def aura_node(s: str):
-    nodes = aura_json.get("nodes")
+    nodes = AURA_JSON.get("nodes")
     find_node = nodes.get(s)
     if find_node is not None:
-        return AuraNode(s, aura_json["nodes"][s])
+        return AuraNode(s, AURA_JSON["nodes"][s])
     valid_keys = []
     for d in nodes.keys():
         if s.lower() in [name.lower() for name in nodes.get(d).get("name", [])]:
@@ -257,9 +276,9 @@ def aura_node(s: str):
             break
 
     if len(valid_keys) != 0:
-        return AuraNode(valid_keys[0], aura_json["nodes"][valid_keys[0]])
+        return AuraNode(valid_keys[0], AURA_JSON["nodes"][valid_keys[0]])
     return None
 
 
-aura_json = get_aura_json()
-kani_json = get_kani_json()
+AURA_JSON = load_aura_json()
+KANI_JSON = load_kani_json()

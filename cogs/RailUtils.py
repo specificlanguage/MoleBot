@@ -3,12 +3,15 @@ from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 
-from cogs.RailTraverse import find_kani_route, find_aura_route, kani_node, aura_node, aura_json
+from cogs.RailTraverse import find_kani_route, find_aura_route, \
+    kani_node, aura_node, AURA_JSON, get_aura_json, get_kani_json
 
 
 class RailUtils(commands.Cog, name="RailUtils"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        get_aura_json.start()
+        get_kani_json.start()
 
     @cog_ext.cog_slash(name="dest",
                        description="Finds /dest command for KANI system",
@@ -61,10 +64,10 @@ class RailUtils(commands.Cog, name="RailUtils"):
             aura_dest = aura_node(destination)
             valid_stops = ["stop", "junctionstop", "stopjunction"]
 
-            if aura_origin.name + "-surface" in aura_json["nodes"]:
+            if aura_origin.name + "-surface" in AURA_JSON["nodes"]:
                 notices += "*AURA Notice: Your origin has a surface station that you may want to check for better " \
                            "routes. Add '(surface)' to your origin input.*\n "
-            if aura_dest.name + "-surface" in aura_json["nodes"]:
+            if aura_dest.name + "-surface" in AURA_JSON["nodes"]:
                 notices += "*AURA Notice: Your destination has a surface station that you may want to check for " \
                            "better routes. Add '(surface)' to your destination input.*\n"
             if aura_dest.type not in valid_stops:
