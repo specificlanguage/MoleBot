@@ -1,5 +1,6 @@
 import datetime
 import discord
+import requests
 from cogs.CivMap import find_closest
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
@@ -51,23 +52,35 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                             value="Value of x or z-coordinate was more than 13000!")
             await ctx.send(embed=embed)
             return
+
+        closest = find_closest(x, z)
+        out = ""
+        for item in closest:
+            info = "{0} blocks {1} {2}".format(str(int(item.get("distance"))).rjust(4, " "),
+                                               item.get("direction").ljust(7, " "),
+                                               item.get("name"))
+            info = "#".ljust(2, " ") + info if item.get("major") else "".ljust(2, " ") + info
+            out += info + "\n"
+
+        civmapurl = "<https://ccmap.github.io/#c={0},{1},r800>".format(str(x), str(z))
+
+        await ctx.send("**Locations at ({0}, {1}):**\nSee also: {2} ```md\n{3}```"
+                       .format(str(x), str(z), civmapurl, out), embed=None)
+
+    @cog_ext.cog_slash(name="civwiki",
+                       description="Get a CivWiki page, or tells the user it doesn't exist.",
+                       options=[create_option(name="page_name",
+                                              description="The CivWiki page name.",
+                                              option_type=3,
+                                              required=True)])
+    async def civwiki(self, ctx: SlashContext, page_name: str):
+        url = "https://civwiki.org/wiki/" + page_name.replace(" ", "_")
+        r = requests.head(f"{url}")
+        if r.status_code == 200:
+            await ctx.send("<" + url + ">")
         else:
-            closest = find_closest(x, z)
-            out = ""
-            for item in closest:
-                info = "{0} blocks {1} {2}".format(str(int(item.get("distance"))).rjust(4, " "),
-                                                   item.get("direction").ljust(7),
-                                                   item.get("name"))
-                if item.get("major"):
-                    info = "**" + info + "**"
-                out += info + "\n"
+            await ctx.send("No article found. Would you like to go to it anyways?\n <{0}>".format(url))
 
-            embed = discord.Embed(color=discord.Colour.gold())
-            embed.add_field(name="Closest features to {0}, {1}:".format(x, z), value=out)
-            embed.add_field(name="CivMap link:",
-                            value="<https://ccmap.github.io/#c=" + str(int(x)) + "," + str(int(z)) + "," + "r400>")
-
-        await ctx.send(embed=embed)
 
 
     # other commands that will become part of this cog:
