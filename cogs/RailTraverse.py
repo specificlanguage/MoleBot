@@ -50,6 +50,11 @@ class AuraNode(RailNode):
         self.dest_junction = data.get("dest_junction", "")
         self.link_dests = data.get("link_dests", {})
 
+def euclid(start, end):
+    return dist([start.x, start.z], [end.x, end.z])
+
+def taxi(start, end):
+    return sum([abs(start.x - end.x), abs(start.z - end.z)])
 
 def get_kani_json():
     r = requests.get("https://raw.githubusercontent.com/Ameliorate/KANI/master/docs/export.json")

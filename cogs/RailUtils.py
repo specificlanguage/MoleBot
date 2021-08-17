@@ -46,10 +46,13 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             value="/dest {0} \n\n{1}\n Travel Time: About {2}m{3}s \n Distance: {4}m".
                             format(kani_route, notices, time_min, time_sec, int(kani_dist)))
 
-        if len(aura_route) <= 0:
+        if len(aura_route) == 0:
             embed.add_field(name="AURA system:",
-                            value="*No route found. Make sure you typed your destinations correctly.\n"
-                                  "You may also be routing from a switch/destination/line in AURA.*")
+                            value="*No route found. Make sure you typed your destinations correctly.*\n")
+
+        elif len(aura_route) < 0:
+            embed.add_field(name="AURA system:",
+                            value="*No route found. You are routing from a switch/destination/line in AURA.*")
 
         else:
             notices = ""  # FYI for later

@@ -1,6 +1,7 @@
 import datetime
 import discord
 import requests
+import re
 from cogs.CivMap import find_closest
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
@@ -74,21 +75,37 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                                               option_type=3,
                                               required=True)])
     async def civwiki(self, ctx: SlashContext, page_name: str):
-        url = "https://civwiki.org/wiki/" + page_name.replace(" ", "_")
-        r = requests.head(f"{url}")
-        if r.status_code == 200:
-            await ctx.send("<" + url + ">")
+        url, success = get_civwiki_page(page_name)
+        if not success:
+            await ctx.send("<{0}>\n*Warning: No page found.*".format(url))
         else:
-            await ctx.send("No article found. Would you like to go to it anyways?\n <{0}>".format(url))
+            await ctx.send("<{0}>".format(url))
 
-
+    @commands.Cog.listener("on_message")
+    async def wikipage(self, ctx):
+        wiki_pattern = "\[{2}([^\]\n]+) *\]{2}"
+        pages = list(set(re.findall(wiki_pattern, ctx.content)))
+        if len(pages) != 0:
+            page_list = ""
+            for page in pages[:5]:
+                url, success = get_civwiki_page(page)
+                if not success:
+                    page_list += "*Warning: No page found for {0}*\n".format(page)
+                else:
+                    page_list += "<{0}>\n".format(url)
+            await ctx.reply(page_list, mention_author=False)
 
     # other commands that will become part of this cog:
-    # whereis [x] [y] [z] to find a location in the world
     # civmap [x] [y] [z] or civmap[name] to give a link to civmap
-    # civwiki to give a link to civwiki
 
 
+def get_civwiki_page(page_name: str):
+    url = "https://civwiki.org/wiki/" + page_name.replace(" ", "_")
+    r = requests.head(f"{url}")
+    if r.status_code == 200:
+        return url, True
+    else:
+        return url, False
 
 
 def setup(bot):
