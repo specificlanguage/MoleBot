@@ -1,4 +1,5 @@
 import discord
+import logging
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
@@ -41,8 +42,9 @@ class RailUtils(commands.Cog, name="RailUtils"):
             time = int(kani_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="KANI system:",
-                            value="/dest {0} \n\n{1}\n Travel Time: About {2}m{3}s \n Distance: {4}m".
-                            format(kani_route, notices, time_min, time_sec, int(kani_dist)))
+                            value="/dest {0} \n\n Travel Time: About {1}m{2}s \n Distance: {3}m".
+                            format(kani_route, time_min, time_sec, int(kani_dist)))
+            embed.set_footer(text=notices)
 
         # Special notice that you're routing from a junction instead
         if len(aura_route) < 0:
@@ -69,10 +71,15 @@ class RailUtils(commands.Cog, name="RailUtils"):
             time = int(aura_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="AURA system:",
-                            value="/dest {0} \n\n{1}\n Travel Time: About {2}m{3}s \n Distance: {4}m".
-                            format(aura_route, notices, time_min, time_sec, int(aura_dist)))
+                            value="/dest {0} \n\n Travel Time: About {1}m{2}s \n Distance: {3}m".
+                            format(aura_route, time_min, time_sec, int(aura_dist)))
+            embed.set_footer(text=notices)
 
-        embed.set_footer(text="See amel.pw/kani or auracc.github.io for more information!")
+        if embed.footer == "":
+            embed.set_footer(text="See amel.pw/kani or auracc.github.io for more information!")
+        if len(embed.fields) == 0:
+            embed.add_field(value="No routes found! Check that you spelled your origin/destination correctly.")
+            logging.info("No route found between {0} and {1}".format(origin, destination))
         await ctx.send(embed=embed, hidden=True)
 
 

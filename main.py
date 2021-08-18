@@ -21,13 +21,22 @@ for extension in cogs:
 
 @bot.event
 async def on_slash_command(message):
-    if message.guild != None:
-        logging.info("{0} sent {1} in guild {2}".format(message.author, message.name, message.guild_id))
+    guild_name = bot.get_guild(message.guild_id)
+    kwargs = message.kwargs
+    args = [key + ":" + kwargs[key] for key in kwargs.keys()]
+    command = "/" + message.name + " " + " ".join(args)
+
+    if message.guild is not None:
+        logging.info("{0} sent '{1}' in guild {2} ({3})".format(message.author, command,
+                                                              guild_name, message.guild_id))
     else:
-        logging.info("{0} sent {1} (via a DM)".format(message.author, message.name))
+        logging.info("{0} sent '{1}' (via a DM)".format(message.author, command))
+
 
 @bot.event
 async def on_message(message):
+    if message.author == bot:
+        return
     if "delusional" in message.content:
         await message.channel.send("**Edit CivWiki:** https://civwiki.org")
         await asyncio.sleep(3)

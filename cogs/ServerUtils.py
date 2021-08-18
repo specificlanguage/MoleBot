@@ -1,5 +1,6 @@
 import datetime
 import discord
+import logging
 import requests
 import re
 from cogs.CivMap import find_closest
@@ -96,10 +97,11 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         if len(pages) != 0:
             page_list = ""
             for page in pages[:5]:
+                logging.info(ctx.name + " looked up " + page + " on CivWiki")
                 page = page.lower().capitalize()
                 url, success = get_civwiki_page(page)
                 if not success:
-                    page_list += "<{0}>\*\n".format(page)
+                    page_list += "<{0}>\*\n".format(url)
                 else:
                     page_list += "<{0}>\n".format(url)
             page_list += "\* - This page might not exist yet!"
