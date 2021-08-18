@@ -23,7 +23,7 @@ for extension in cogs:
 async def on_slash_command(message):
     guild_name = bot.get_guild(message.guild_id)
     kwargs = message.kwargs
-    args = [key + ":" + kwargs[key] for key in kwargs.keys()]
+    args = [key + ":" + str(kwargs[key]) for key in kwargs.keys()]
     command = "/" + message.name + " " + " ".join(args)
 
     if message.guild is not None:

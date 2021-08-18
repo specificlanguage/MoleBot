@@ -9,7 +9,7 @@ def init_logger():
 
     logger = logging.getLogger()
     logger.setLevel(level=logging.INFO)
-    formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] - %(name)s - %(message)s", "%Y-%m-%d %H:%M:%S")
+    formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] - %(message)s", "%Y-%m-%d %H:%M:%S")
     date = datetime.date.today()
 
     # Creates debug file.

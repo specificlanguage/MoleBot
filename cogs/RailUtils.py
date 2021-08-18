@@ -34,9 +34,9 @@ class RailUtils(commands.Cog, name="RailUtils"):
         if len(kani_route) > 0:
             notices = ""
             if kani_node(origin).switch:
-                notices += "*KANI Notice: You are routing from a switch.*\n"
+                notices += "KANI Notice: You are routing from a switch.\n"
             if kani_node(destination).switch:
-                notices += "*KANI Notice: You are routing to a switch. You will need to disembark manually.*\n"
+                notices += "KANI Notice: You are routing to a switch. You will need to disembark manually.\n"
 
             kani_route = " ".join(kani_route)
             time = int(kani_dist) // 8
@@ -59,11 +59,11 @@ class RailUtils(commands.Cog, name="RailUtils"):
             valid_stops = ["stop", "junctionstop", "stopjunction"]
 
             if aura_origin.name + "-surface" in AURA_JSON["nodes"]:
-                notices += "*AURA Notice: Your origin has a surface station that you may want to check for better " \
-                           "routes. Add '(surface)' to your origin input.*\n "
+                notices += "AURA Notice: Your origin has a surface station that you may want to check for better " \
+                           "routes. Add '(surface)' to your origin input.\n "
             if aura_dest.name + "-surface" in AURA_JSON["nodes"]:
-                notices += "*AURA Notice: Your destination has a surface station that you may want to check for " \
-                           "better routes. Add '(surface)' to your destination input.*\n"
+                notices += "AURA Notice: Your destination has a surface station that you may want to check for " \
+                           "better routes. Add '(surface)' to your destination input.\n"
             if aura_dest.type not in valid_stops:
                 notices += "*AURA Notice: You are not routing to a stop.*\n"
 

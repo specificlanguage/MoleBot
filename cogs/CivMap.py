@@ -1,19 +1,32 @@
-import requests, json
+import json
+import requests
+import logging
+from discord.ext import tasks
 from math import dist, atan2, pi
 from operator import itemgetter
 
 
-def get_settlements():
+@tasks.loop(hours=3)
+async def get_settlements():
+    logging.info("Grabbing CivMap settlements file from GitHub at "
+                 "https://raw.githubusercontent.com/ccmap/data/master/settlements.civmap.json")
     r = requests.get("https://raw.githubusercontent.com/ccmap/data/master/settlements.civmap.json")
     settlements_json = r.json()
     settlements_json = settlements_json.get("features")
     with open("resources/settlements.json", "w+") as fp:
         fp.truncate(0)  # clear file to reload it
         json.dump(settlements_json, fp)
-    return settlements_json
+    global settlements
+    settlements = load_settlements()
+    logging.info("Finished grabbing CivMap settlements!")
 
 
-settlements = get_settlements()
+def load_settlements():
+    with open("resources/settlements.json", "r") as fp:
+        return json.load(fp)
+
+
+settlements = load_settlements()
 
 
 def find_closest(x: int, z: int):

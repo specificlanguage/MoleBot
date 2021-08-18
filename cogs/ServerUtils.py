@@ -3,7 +3,7 @@ import discord
 import logging
 import requests
 import re
-from cogs.CivMap import find_closest
+from cogs.CivMap import find_closest, get_settlements
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
@@ -14,6 +14,7 @@ from string import whitespace
 class ServerUtils(commands.Cog, name="ServerUtils"):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        get_settlements.start()
 
     @cog_ext.cog_slash(name="ping",
                        description="Ping the default server or another server (note this cannot ping Bedrock servers)",
@@ -97,14 +98,14 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         if len(pages) != 0:
             page_list = ""
             for page in pages[:5]:
-                logging.info(ctx.name + " looked up " + page + " on CivWiki")
-                page = page.lower().capitalize()
+                logging.info(ctx.author.name + " looked up " + page + " on CivWiki")
                 url, success = get_civwiki_page(page)
                 if not success:
-                    page_list += "<{0}>\*\n".format(url)
+                    page_list += "*<{0}>*\n".format(url)
                 else:
                     page_list += "<{0}>\n".format(url)
-            page_list += "\* - This page might not exist yet!"
+            if "*" in page_list:
+                page_list += "*Links in italics may not exist yet!*"
             await ctx.reply(page_list, mention_author=False)
 
     # other commands that will become part of this cog (for next release)
@@ -114,7 +115,8 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 
 def get_civwiki_page(page_name: str):
     url = "https://civwiki.org/wiki/" + page_name.replace(" ", "_")
-    r = requests.head(f"{url}")
+    r = requests.head(url)
+    print(r)
     if r.status_code == 200:
         return url, True
     else:
