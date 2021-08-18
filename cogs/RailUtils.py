@@ -33,18 +33,23 @@ class RailUtils(commands.Cog, name="RailUtils"):
         embed = discord.Embed(title="Route from {0} to {1}:".format(origin, destination),
                               color=discord.Color.red())
 
+        if origin == destination:
+            embed.add_field(name="No route found!", value="You're at your destination already!")
+
         if len(kani_route) == 0:
             out = ""
             origin_names = names_close_to(origin)
             destination_names = names_close_to(destination)
-            if origin_names > 0 and kani_node(origin) is None:
-                out += "*KANI error: Did you mean {0}*".format(" or ".join([dest for dest in names_close_to(origin)]))
-            if destination_names > 0 and kani_node(destination) is None:
-                out += "*KANI error: Did you mean {0}*".format(" or ".join([dest for dest in names_close_to(origin)]))
+            if len(origin_names) > 0 and kani_node(origin) is None:
+                out += "**KANI error**:\n Did you mean **{0}** for your origin?\n"\
+                    .format("** or **".join([dest for dest in names_close_to(origin)]))
+            if len(destination_names) > 0 and kani_node(destination) is None:
+                out += "**KANI error**:\n Did you mean **{0}** for your destination?\n"\
+                    .format("** or **".join([dest for dest in names_close_to(origin)]))
             if out != "":
                 embed.add_field(name="KANI system:", value=out)
 
-        if len(kani_route) > 0:
+        elif len(kani_route) > 0:
             notices = ""
             if kani_node(origin).switch:
                 notices += "KANI Notice: You are routing from a switch.\n"
@@ -64,7 +69,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
             embed.add_field(name="AURA system:",
                             value="*No route found. You are routing to/from a switch/destination/line in AURA.*")
 
-        if len(aura_route) > 0:
+        elif len(aura_route) > 0:
             notices = ""  # FYI for later
 
             aura_origin = aura_node(origin)
@@ -88,7 +93,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             format(aura_route, time_min, time_sec, int(aura_dist)))
             embed.set_footer(text=notices)
 
-        if embed.footer == "":
+        if embed.footer.text == discord.Embed.Empty:
             embed.set_footer(text="See amel.pw/kani or auracc.github.io for more information!")
         if len(embed.fields) == 0:
             embed.add_field(name="No routes found!",

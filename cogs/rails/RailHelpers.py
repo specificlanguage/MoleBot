@@ -25,4 +25,4 @@ def find_closest_dests(x: int, z: int):
 
 
 def names_close_to(dest: str):
-    return difflib.get_close_matches(dest, KANI_JSON.keys())
+    return [match for match in difflib.get_close_matches(dest, KANI_JSON.keys()) if "j:" not in match[:2]]

@@ -203,6 +203,8 @@ def find_aura_route(start: str, end: str):
 
 
 def astar(start_node: RailNode, end_node: RailNode):
+    if start_node == end_node:
+        return [], -2
 
     open_list = [start_node]
     closed_list = []
