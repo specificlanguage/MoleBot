@@ -86,9 +86,9 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         page_name = page_name.lower().capitalize()
         url, success = get_civwiki_page(page_name)
         if not success:
-            await ctx.send("<{0}>\n*This page might not exist yet!*".format(url))
+            await ctx.send("{0}\n*This page might not exist yet!*".format(url))
         else:
-            await ctx.send("<{0}>".format(url))
+            await ctx.send("{0}".format(url))
 
     @commands.Cog.listener("on_message")
     async def wikipage(self, ctx):
@@ -106,6 +106,8 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                     page_list += "<{0}>\n".format(url)
             if "*" in page_list:
                 page_list += "*Links in italics may not exist yet!*"
+            if len(pages) == 1:
+                page_list = page_list.replace("<", "").replace(">", "")
             await ctx.reply(page_list, mention_author=False)
 
     # other commands that will become part of this cog (for next release)

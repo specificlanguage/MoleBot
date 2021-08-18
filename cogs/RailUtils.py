@@ -117,18 +117,12 @@ class RailUtils(commands.Cog, name="RailUtils"):
         if len(dests) == 0:
             await ctx.send("You're searching for nodes outside of the map!")
             return
-        directions = ["N", "NNW", "NW", "WNW", "W", "WSW", "SW", "SSW", "S", "SSE", "SE", "ESE",
-                      "E", "ENE", "NE", "NNE", "N"]
-        out = ""
         longest_len = max([len(dest["name"]) for dest in dests])
+        out = ""
         for item in dests:
-            angle = item.get("angle")
-            angle = angle if angle >= 0 else angle + 360
-            direction = directions[int(angle // 22.5)]
             info = "{0} blocks {1} {2} ({3}, {4})".format(str(int(item.get("distance"))).rjust(4, " "),
-                                                          direction.ljust(5, " "),
-                                                          item.get("name").ljust(longest_len, " "), item.get("x"),
-                                                          item.get("z"))
+                item.get("direction").ljust(5, " "), item.get("name").ljust(longest_len, " "),
+                item.get("x"), item.get("z"))
             info = "#".ljust(2, " ") + info if item.get("links") >= 5 else "".ljust(2, " ") + info
             out += info + "\n"
         await ctx.send("**Dests near ({0}, {1}):**\nSee also: {2} ```md\n{3}```"

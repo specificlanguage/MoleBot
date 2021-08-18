@@ -2,7 +2,7 @@ import json
 import requests
 import logging
 from discord.ext import tasks
-from math import dist, atan2, pi
+from math import dist, atan2, degrees
 from operator import itemgetter
 
 
@@ -46,7 +46,7 @@ def find_closest(x: int, z: int):
 
         distance = distances[sett.get('name')]
 
-        angle = atan2(sett["z"] - z, sett["x"] - x) / pi * 180
+        angle = degrees(atan2(sett["z"] - z, sett["x"] - x)) + 90
         angle = angle if angle >= 0 else angle + 360
         x, z = sett["x"], sett["z"]
 
