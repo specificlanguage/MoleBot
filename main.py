@@ -1,8 +1,5 @@
 import asyncio
 import os
-
-import discord_slash.utils.manage_commands
-
 import log
 import logging
 from discord import Intents, File
