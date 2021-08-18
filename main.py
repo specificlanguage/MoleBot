@@ -1,5 +1,8 @@
 import asyncio
 import os
+
+import discord_slash.utils.manage_commands
+
 import log
 import logging
 from discord import Intents, File
@@ -35,9 +38,9 @@ async def on_slash_command(message):
 
 @bot.event
 async def on_message(message):
-    if message.author == bot:
+    if message.author == bot or message.author.bot:
         return
-    if "delusional" in message.content:
+    if "delusional" in message.content and "[[" not in message.content:
         await message.channel.send("**Edit CivWiki:** https://civwiki.org")
         await asyncio.sleep(3)
 
@@ -50,6 +53,7 @@ async def mole(ctx: SlashContext):
 @bot.event
 async def on_ready():
     logging.info("MoleBot is ready!")
+
 
 log.init_logger()
 bot.run(os.environ.get("token"))

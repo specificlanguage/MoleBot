@@ -62,7 +62,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         longest_len = max([len(dest["name"]) for dest in closest])
         for item in closest:
             info = "{0} blocks {1} {2} ({3}, {4})".format(str(int(item.get("distance"))).rjust(4, " "),
-                                                          item.get("direction").ljust(7, " "),
+                                                          item.get("direction").ljust(5, " "),
                                                           item.get("name").ljust(longest_len, " "), item.get("x"),
                                                           item.get("z"))
             info = "#".ljust(2, " ") + info if item.get("major") else "".ljust(2, " ") + info
@@ -116,7 +116,6 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 def get_civwiki_page(page_name: str):
     url = "https://civwiki.org/wiki/" + page_name.replace(" ", "_")
     r = requests.head(url)
-    print(r)
     if r.status_code == 200:
         return url, True
     else:

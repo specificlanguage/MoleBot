@@ -4,8 +4,9 @@ from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 
-from cogs.RailTraverse import find_kani_route, find_aura_route, \
+from cogs.rails.RailTraverse import find_kani_route, find_aura_route, \
     kani_node, aura_node, AURA_JSON, get_aura_json, get_kani_json
+from cogs.rails.RailHelpers import find_closest_dests, names_close_to
 
 
 class RailUtils(commands.Cog, name="RailUtils"):
@@ -25,11 +26,23 @@ class RailUtils(commands.Cog, name="RailUtils"):
                                               option_type=3,
                                               required=True)])
     async def dest(self, ctx: SlashContext, origin: str, destination: str):
-        kani_route, kani_dist = find_kani_route(origin.lower(), destination.lower())
-        aura_route, aura_dist = find_aura_route(origin.lower(), destination.lower())
+        origin, destination = origin.lower(), destination.lower()
+        kani_route, kani_dist = find_kani_route(origin, destination)
+        aura_route, aura_dist = find_aura_route(origin, destination)
 
         embed = discord.Embed(title="Route from {0} to {1}:".format(origin, destination),
                               color=discord.Color.red())
+
+        if len(kani_route) == 0:
+            out = ""
+            origin_names = names_close_to(origin)
+            destination_names = names_close_to(destination)
+            if origin_names > 0 and kani_node(origin) is None:
+                out += "*KANI error: Did you mean {0}*".format(" or ".join([dest for dest in names_close_to(origin)]))
+            if destination_names > 0 and kani_node(destination) is None:
+                out += "*KANI error: Did you mean {0}*".format(" or ".join([dest for dest in names_close_to(origin)]))
+            if out != "":
+                embed.add_field(name="KANI system:", value=out)
 
         if len(kani_route) > 0:
             notices = ""
@@ -78,9 +91,43 @@ class RailUtils(commands.Cog, name="RailUtils"):
         if embed.footer == "":
             embed.set_footer(text="See amel.pw/kani or auracc.github.io for more information!")
         if len(embed.fields) == 0:
-            embed.add_field(value="No routes found! Check that you spelled your origin/destination correctly.")
+            embed.add_field(name="No routes found!",
+                            value="No routes found! Check that you spelled your origin/destination correctly.")
             logging.info("No route found between {0} and {1}".format(origin, destination))
         await ctx.send(embed=embed, hidden=True)
+
+
+    @cog_ext.cog_slash(name="finddests",
+                       description="Finds /dest command for KANI system",
+                       options=[create_option(name="x",
+                                              description="Civclassic x-coordinate to search",
+                                              option_type=4,
+                                              required=True),
+                                create_option(name="z",
+                                              description="CivClassic z-coordinate to search",
+                                              option_type=4,
+                                              required=True)])
+    async def finddests(self, ctx: SlashContext, x: int, z: int):
+        dests = find_closest_dests(x, z)
+        if len(dests) == 0:
+            await ctx.send("You're searching for nodes outside of the map!")
+            return
+        directions = ["N", "NNW", "NW", "WNW", "W", "WSW", "SW", "SSW", "S", "SSE", "SE", "ESE",
+                      "E", "ENE", "NE", "NNE", "N"]
+        out = ""
+        longest_len = max([len(dest["name"]) for dest in dests])
+        for item in dests:
+            angle = item.get("angle")
+            angle = angle if angle >= 0 else angle + 360
+            direction = directions[int(angle // 22.5)]
+            info = "{0} blocks {1} {2} ({3}, {4})".format(str(int(item.get("distance"))).rjust(4, " "),
+                                                          direction.ljust(5, " "),
+                                                          item.get("name").ljust(longest_len, " "), item.get("x"),
+                                                          item.get("z"))
+            info = "#".ljust(2, " ") + info if item.get("links") >= 5 else "".ljust(2, " ") + info
+            out += info + "\n"
+        await ctx.send("**Dests near ({0}, {1}):**\nSee also: {2} ```md\n{3}```"
+                       .format(str(x), str(z), "amel.pw/kani", out), embed=None)
 
 
 def setup(bot):
