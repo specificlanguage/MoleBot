@@ -22,9 +22,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                                 create_option(name="destination",
                                               description="Enter an destination station",
                                               option_type=3,
-                                              required=True)
-                                ]
-                       )
+                                              required=True)])
     async def dest(self, ctx: SlashContext, origin: str, destination: str):
         kani_route, kani_dist = find_kani_route(origin.lower(), destination.lower())
         aura_route, aura_dist = find_aura_route(origin.lower(), destination.lower())
@@ -32,10 +30,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
         embed = discord.Embed(title="Route from {0} to {1}:".format(origin, destination),
                               color=discord.Color.red())
 
-        if len(kani_route) <= 0:
-            embed.add_field(name="KANI system:",
-                            value="*No route found. Make sure you typed your destinations correctly.*")
-        else:
+        if len(kani_route) > 0:
             notices = ""
             if kani_node(origin).switch:
                 notices += "*KANI Notice: You are routing from a switch.*\n"
@@ -49,15 +44,12 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             value="/dest {0} \n\n{1}\n Travel Time: About {2}m{3}s \n Distance: {4}m".
                             format(kani_route, notices, time_min, time_sec, int(kani_dist)))
 
-        if len(aura_route) == 0:
+        # Special notice that you're routing from a junction instead
+        if len(aura_route) < 0:
             embed.add_field(name="AURA system:",
-                            value="*No route found. Make sure you typed your destinations correctly.*\n")
+                            value="*No route found. You are routing to/from a switch/destination/line in AURA.*")
 
-        elif len(aura_route) < 0:
-            embed.add_field(name="AURA system:",
-                            value="*No route found. You are routing from a switch/destination/line in AURA.*")
-
-        else:
+        if len(aura_route) > 0:
             notices = ""  # FYI for later
 
             aura_origin = aura_node(origin)
@@ -80,6 +72,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             value="/dest {0} \n\n{1}\n Travel Time: About {2}m{3}s \n Distance: {4}m".
                             format(aura_route, notices, time_min, time_sec, int(aura_dist)))
 
+        embed.set_footer(text="See amel.pw/kani or auracc.github.io for more information!")
         await ctx.send(embed=embed, hidden=True)
 
 

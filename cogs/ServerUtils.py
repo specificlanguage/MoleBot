@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 from mcstatus import MinecraftServer
+from string import whitespace
 
 
 class ServerUtils(commands.Cog, name="ServerUtils"):
@@ -56,10 +57,12 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 
         closest = find_closest(x, z)
         out = ""
+        longest_len = max([len(dest["name"]) for dest in closest])
         for item in closest:
-            info = "{0} blocks {1} {2}".format(str(int(item.get("distance"))).rjust(4, " "),
-                                               item.get("direction").ljust(7, " "),
-                                               item.get("name"))
+            info = "{0} blocks {1} {2} ({3}, {4})".format(str(int(item.get("distance"))).rjust(4, " "),
+                                                          item.get("direction").ljust(7, " "),
+                                                          item.get("name").ljust(longest_len, " "), item.get("x"),
+                                                          item.get("z"))
             info = "#".ljust(2, " ") + info if item.get("major") else "".ljust(2, " ") + info
             out += info + "\n"
 
@@ -73,8 +76,11 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                        options=[create_option(name="page_name",
                                               description="The CivWiki page name.",
                                               option_type=3,
-                                              required=True)])
-    async def civwiki(self, ctx: SlashContext, page_name: str):
+                                              required=False)])
+    async def civwiki(self, ctx: SlashContext, page_name=""):
+        if page_name == "":
+            await ctx.send("**Edit CivWiki**: https://civwiki.org")
+            return
         page_name = page_name.lower().capitalize()
         url, success = get_civwiki_page(page_name)
         if not success:
@@ -86,6 +92,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
     async def wikipage(self, ctx):
         wiki_pattern = "\[{2}([^\]\n]+) *\]{2}"
         pages = re.findall(wiki_pattern, ctx.content)
+        pages = [page for page in pages if page not in whitespace]
         if len(pages) != 0:
             page_list = ""
             for page in pages[:5]:
@@ -98,8 +105,9 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             page_list += "\* - This page might not exist yet!"
             await ctx.reply(page_list, mention_author=False)
 
-    # other commands that will become part of this cog:
+    # other commands that will become part of this cog (for next release)
     # civmap [x] [y] [z] or civmap[name] to give a link to civmap
+    # whois [player] to get a player's info from namemc or other playtime sources
 
 
 def get_civwiki_page(page_name: str):

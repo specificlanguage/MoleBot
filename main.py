@@ -20,6 +20,13 @@ for extension in cogs:
 
 
 @bot.event
+async def on_slash_command(message):
+    if message.guild != None:
+        logging.info("{0} sent {1} in guild {2}".format(message.author, message.name, message.guild_id))
+    else:
+        logging.info("{0} sent {1} (via a DM)".format(message.author, message.name))
+
+@bot.event
 async def on_message(message):
     if "delusional" in message.content:
         await message.channel.send("**Edit CivWiki:** https://civwiki.org")
