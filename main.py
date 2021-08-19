@@ -1,4 +1,7 @@
 import asyncio
+
+import discord
+
 import log
 import logging
 import os
@@ -61,12 +64,12 @@ async def mole(ctx: SlashContext):
         await ctx.send(random.choice(mole_gifs))
 
 
-@slash.slash(name="helps", description="Help!",
+@slash.slash(name="help", description="Help!",
              options=[create_option(name="command",
                                     description="command",
                                     option_type=3,
                                     required=False)])
-async def helps(ctx: SlashContext, command=""):
+async def help(ctx: SlashContext, command=""):
     url = "https://discord.com/api/v8/applications/{0}/commands".format(os.environ.get("app_id"))
     header = {"Authorization": "Bot " + os.environ.get("token")}
     r = requests.get(url, headers=header)
@@ -105,6 +108,19 @@ async def helps(ctx: SlashContext, command=""):
 
     else:
         await ctx.reply("Command not found. Try `/help`?")
+
+
+@slash.slash(name="invite", description="Spread the mole to another server")
+async def invite(ctx: SlashContext):
+    embed = discord.Embed(title="Help spread the word of the mole!",
+                          description="Invite me to another server so they can generate dest commands,"
+                                      "find where they are on CivClassic, and other features too!",
+                          thumbnail="https://c.tenor.com/AZPQZggbt_YAAAAd/monty-mole-monty.gif")
+    embed.add_field(name="Invite:",
+                    value="https://discord.com/api/oauth2/authorize?client_id=876536669589864498&permissions=8&scope"
+                          "=applications.commands%20bot") 
+    embed.set_footer(text="Made by specificlanguage#2891. Contact him for more information!")
+    await ctx.send(embed=embed)
 
 
 @bot.event
