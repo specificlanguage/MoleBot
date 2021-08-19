@@ -1,4 +1,5 @@
 /idea/
 /venv/
 .idea/
+/logs/
 *.pyc
