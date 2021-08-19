@@ -114,8 +114,8 @@ async def invite(ctx: SlashContext):
                               "find where they are on CivClassic, and other features too!",
                   thumbnail="https://c.tenor.com/AZPQZggbt_YAAAAd/monty-mole-monty.gif")
     embed.add_field(name="Invite:",
-                    value="https://discord.com/api/oauth2/authorize?client_id=876536669589864498&permissions=8&scope"
-                          "=applications.commands%20bot")
+                    value="https://discord.com/api/oauth2/authorize?client_id={0}&permissions"
+                          "=0&scope=bot%20applications.commands".format(os.environ.get("app_id")))
     embed.set_footer(text="Made by specificlanguage#2891. Contact him for more information!")
     await ctx.send(embed=embed)
 
