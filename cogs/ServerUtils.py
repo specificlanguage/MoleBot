@@ -17,7 +17,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         get_settlements.start()
 
     @cog_ext.cog_slash(name="ping",
-                       description="Ping the default server or another server (note this cannot ping Bedrock servers)",
+                       description="Ping the default server or another server",
                        options=[create_option(name="server_ip",
                                               description="Enter a server IP (will default to CivClassic)",
                                               option_type=3,
@@ -40,7 +40,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             await ctx.send("Could not find **" + server_ip + "**, it's either offline or non-existent.")
 
     @cog_ext.cog_slash(name="whereis",
-                       description="Ping the default server or another server (note this cannot ping Bedrock servers)",
+                       description="Finds closest locations in CivClassic",
                        options=[create_option(name="x",
                                               description="CivClassic x-coordinate",
                                               option_type=4,
@@ -74,7 +74,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                        .format(str(x), str(z), civmapurl, out), embed=None)
 
     @cog_ext.cog_slash(name="civwiki",
-                       description="Get a CivWiki page, or tells the user it doesn't exist.",
+                       description="Get a CivWiki page",
                        options=[create_option(name="page_name",
                                               description="The CivWiki page name.",
                                               option_type=3,

@@ -16,7 +16,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
         get_kani_json.start()
 
     @cog_ext.cog_slash(name="dest",
-                       description="Finds /dest command for KANI system",
+                       description="Finds /dest commands",
                        options=[create_option(name="origin",
                                               description="Enter an origin station",
                                               option_type=3,
@@ -36,21 +36,22 @@ class RailUtils(commands.Cog, name="RailUtils"):
         if origin == destination:
             embed.add_field(name="No route found!", value="You're at your destination already!")
 
+        notices = ""  # FYI for later
+
         if len(kani_route) == 0:
             out = ""
             origin_names = names_close_to(origin)
             destination_names = names_close_to(destination)
             if len(origin_names) > 0 and kani_node(origin) is None:
-                out += "**KANI error**:\n Did you mean **{0}** for your origin?\n"\
+                out += "*Error*:\n Did you mean **{0}** for your origin?\n"\
                     .format("** or **".join([dest for dest in names_close_to(origin)]))
             if len(destination_names) > 0 and kani_node(destination) is None:
-                out += "**KANI error**:\n Did you mean **{0}** for your destination?\n"\
+                out += "*Error*:\n Did you mean **{0}** for your destination?\n"\
                     .format("** or **".join([dest for dest in names_close_to(origin)]))
             if out != "":
                 embed.add_field(name="KANI system:", value=out)
 
         elif len(kani_route) > 0:
-            notices = ""
             if kani_node(origin).switch:
                 notices += "KANI Notice: You are routing from a switch.\n"
             if kani_node(destination).switch:
@@ -70,7 +71,6 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             value="*No route found. You are routing to/from a switch/destination/line in AURA.*")
 
         elif len(aura_route) > 0:
-            notices = ""  # FYI for later
 
             aura_origin = aura_node(origin)
             aura_dest = aura_node(destination)
@@ -83,7 +83,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                 notices += "AURA Notice: Your destination has a surface station that you may want to check for " \
                            "better routes. Add '(surface)' to your destination input.\n"
             if aura_dest.type not in valid_stops:
-                notices += "*AURA Notice: You are not routing to a stop.*\n"
+                notices += "AURA Notice: You are not routing to a stop.\n"
 
             aura_route = " ".join(aura_route)
             time = int(aura_dist) // 8
@@ -93,7 +93,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                             format(aura_route, time_min, time_sec, int(aura_dist)))
             embed.set_footer(text=notices)
 
-        if embed.footer.text == discord.Embed.Empty:
+        if notices == "":
             embed.set_footer(text="See amel.pw/kani or auracc.github.io for more information!")
         if len(embed.fields) == 0:
             embed.add_field(name="No routes found!",
@@ -103,7 +103,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
 
 
     @cog_ext.cog_slash(name="finddests",
-                       description="Finds /dest command for KANI system",
+                       description="Finds closest /dest locations to use",
                        options=[create_option(name="x",
                                               description="Civclassic x-coordinate to search",
                                               option_type=4,
