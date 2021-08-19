@@ -2,6 +2,7 @@ import asyncio
 import log
 import logging
 import os
+import random
 import requests
 from discord import Intents, File, Embed
 from discord.ext import commands
@@ -48,7 +49,16 @@ async def on_message(message):
 
 @slash.slash(name="mole", description="Mole guy")
 async def mole(ctx: SlashContext):
-    await ctx.send(file=File('resources/montymole.gif'))
+    chance = random.randint(1, 100)
+    if chance > 5:
+        await ctx.send(file=File('resources/montymole.gif'))
+    else:
+        mole_gifs = ["https://tenor.com/view/taupe-hide-gif-5585646",
+                     "https://media.giphy.com/media/MuACBobEZorb6Xyc1S/giphy.gif",
+                     "https://media.giphy.com/media/LFnXTvOR49SZa/giphy.gif",
+                     "https://tenor.com/view/mole-deal-withit-naked-mole-rat-gif-12749507",
+                     "https://c.tenor.com/iK1zcO0bcUQAAAAC/mole-monty-mole.gif"]
+        await ctx.send(random.choice(mole_gifs))
 
 
 @slash.slash(name="helps", description="Help!",

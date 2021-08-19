@@ -82,30 +82,22 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
     async def civwiki(self, ctx: SlashContext, page_name=""):
         if page_name == "":
             await ctx.send("**Edit CivWiki**: https://civwiki.org")
-            return
-        page_name = page_name.lower().capitalize()
-        url, success = get_civwiki_page(page_name)
-        if not success:
-            await ctx.send("{0}\n*This page might not exist yet!*".format(url))
-        else:
-            await ctx.send("{0}".format(url))
+        url = "https://civwiki.org/wiki/" + page_name.replace(" ", "_")
+        await ctx.send("{0}".format(url))
 
     @commands.Cog.listener("on_message")
     async def wikipage(self, ctx):
+
+        def url(s: str):
+            return "https://civwiki.org/wiki/" + s.replace(" ", "_")
+
         wiki_pattern = "\[{2}([^\]\n]+) *\]{2}"
         pages = re.findall(wiki_pattern, ctx.content)
         pages = [page for page in pages if page not in whitespace]
         if len(pages) != 0:
             page_list = ""
-            for page in pages[:5]:
-                logging.info(ctx.author.name + " looked up " + page + " on CivWiki")
-                url, success = get_civwiki_page(page)
-                if not success:
-                    page_list += "*<{0}>*\n".format(url)
-                else:
-                    page_list += "<{0}>\n".format(url)
-            if "*" in page_list:
-                page_list += "*Links in italics may not exist yet!*"
+            logging.info(ctx.author.name + " looked up " + ", ".join([page for page in pages[:5]]) + " on CivWiki")
+            page_list += "\n".join([url(page) for page in pages[:5]])
             if len(pages) == 1:
                 page_list = page_list.replace("<", "").replace(">", "")
             await ctx.reply(page_list, mention_author=False)
