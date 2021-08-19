@@ -37,7 +37,9 @@ async def on_slash_command(message):
 
 @bot.event
 async def on_message(message):
-    if message.author == bot or message.author.bot:
+    if message.author.bot:
+        return
+    if message.author.id == bot.user.id:  # Ignore self
         return
     if "delusional" in message.content and "[[" not in message.content:
         await message.channel.send("**Edit CivWiki:** https://civwiki.org")
