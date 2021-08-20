@@ -47,8 +47,35 @@ async def on_message(message):
         await asyncio.sleep(3)
 
 
+@slash.slash(name="disablemole", description="Disable or reenables the mole guy :(")
+async def disablemole(ctx: SlashContext):
+    if ctx.guild is None:
+        await ctx.send("This can only be run in a discord.")
+    if not ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_messages:
+        restricted_servers = get_restricted_servers()
+        if ctx.guild_id not in restricted_servers:
+            restricted_servers.append(ctx.guild_id)
+            logging.info("{0} ({1}) disabled moles.".format(ctx.guild.name, ctx.guild_id))
+            await ctx.send("Added '{0}' to the list of disabled mole servers. Do /disablemole again to reenable it."
+                           .format(ctx.guild.name))
+        elif ctx.guild_id in restricted_servers:
+            restricted_servers.remove(ctx.guild_id)
+            logging.info("{0} ({1}) enabled moles.".format(ctx.guild.name, ctx.guild_id))
+            await ctx.send("Removed {0} from the list of disabled mole servers. Do /disablemole again to redisable "
+                           "it. "
+                           .format(ctx.guild.name))
+        with open("resources/config.txt", mode="w+") as fp:
+            fp.truncate(0)
+            fp.write("\n".join([str(s) for s in restricted_servers]))
+    else:
+        await ctx.send("Only users with administrator or manage messages permissions can use this command.")
+
+
 @slash.slash(name="mole", description="Mole guy")
 async def mole(ctx: SlashContext):
+    if ctx.guild_id in get_restricted_servers():
+        await ctx.send("The administrator has disabled moles on this server. *Sorry!*")
+        return
     chance = random.randint(1, 100)
     if chance > 5:
         await ctx.send(file=File('resources/montymole.gif'))
@@ -119,10 +146,46 @@ async def invite(ctx: SlashContext):
     embed.set_footer(text="Made by specificlanguage#2891. Contact him for more information!")
     await ctx.send(embed=embed)
 
+@bot.event
+async def on_guild_join(guild):
+    logging.info("MoleBot has joined {0}! (id = {1})".format(guild.name, guild.id))
+    restricted_servers = get_restricted_servers()
+    restricted_servers.append(guild.id)
+    with open("resources/config.txt", mode="w+") as fp:
+        fp.truncate(0)
+        fp.write("\n".join([str(s) for s in restricted_servers]))
+
+    for channel in guild.text_channels:
+        if channel.permissions_for(guild.me).send_messages:
+            await channel.send("Hi, I'm MoleBot! Type /help to see what I do. "
+                               "(and don't worry. I've disabled /mole on this server.)")
+
+
+@bot.event
+async def on_guild_remove(guild):
+    logging.info("MoleBot has left {0}. (id = {1})".format(guild.name, guild.id))
+    restricted_servers = get_restricted_servers()
+    try:
+        restricted_servers.remove(guild.id)
+        with open("resources/config.txt", mode="w+") as fp:
+            fp.truncate(0)
+            fp.write("\n".join([str(s) for s in restricted_servers]))
+    except ValueError:
+        return
+
 
 @bot.event
 async def on_ready():
     logging.info("MoleBot is ready!")
+
+
+def get_restricted_servers():
+    restricted_servers = []
+    if os.path.exists("resources/config.txt") and os.stat("resources/config.txt").st_size != 0:
+        with open("resources/config.txt", mode="r") as fp:
+            restricted_servers = fp.readlines()
+    restricted_servers = [int(s) if s[-1] != "\n" else int(s[:-1]) for s in restricted_servers]
+    return restricted_servers
 
 
 logger = log.init_logger()
