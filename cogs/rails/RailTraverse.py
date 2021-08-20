@@ -143,6 +143,7 @@ def reconstruct_aura_path(node: AuraNode, start: AuraNode):
     # TODO: determine line routed direction
     # TODO: if line, recalculate distance between nodes
     last_node = None
+    first_node = node
     while node != start:
         tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
 
@@ -156,7 +157,8 @@ def reconstruct_aura_path(node: AuraNode, start: AuraNode):
             else:
                 path.append(node.dest_a)
 
-        elif node.type == "stopjunction":
+        # Skip if node didn't use the junction
+        elif node.type == "stopjunction" and first_node != node:
             path.append(node.dest_junction)
             path.append(node.dest)
         elif node.type == "crossing":
