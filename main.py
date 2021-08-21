@@ -51,7 +51,7 @@ async def on_message(message):
 async def disablemole(ctx: SlashContext):
     if ctx.guild is None:
         await ctx.send("This can only be run in a discord.")
-    if not ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_messages:
+    if ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_messages:
         restricted_servers = get_restricted_servers()
         if ctx.guild_id not in restricted_servers:
             restricted_servers.append(ctx.guild_id)
