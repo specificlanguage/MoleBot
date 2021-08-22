@@ -30,10 +30,9 @@ async def on_slash_command(message):
     command = "/" + message.name + " " + " ".join(args)
 
     if message.guild is not None:
-        logging.info("{0} sent '{1}' in guild {2} ({3})".format(message.author, command,
-                                                                guild_name, message.guild_id))
+        logging.info("Somebody sent '{0}' in guild {1} ({2})".format(command, guild_name, message.guild_id))
     else:
-        logging.info("{0} sent '{1}' (via a DM)".format(message.author, command))
+        logging.info("Somebody sent '{0}' (via a DM)".format(command))
 
 
 @bot.event
@@ -159,6 +158,7 @@ async def on_guild_join(guild):
         if channel.permissions_for(guild.me).send_messages:
             await channel.send("Hi, I'm MoleBot! Type /help to see what I do. "
                                "(and don't worry. I've disabled /mole on this server.)")
+            break
 
 
 @bot.event

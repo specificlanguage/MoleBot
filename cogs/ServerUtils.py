@@ -96,7 +96,8 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         pages = [page for page in pages if page not in whitespace]
         if len(pages) != 0:
             page_list = ""
-            logging.info(ctx.author.name + " looked up " + ", ".join([page for page in pages[:5]]) + " on CivWiki")
+            logging.info("Someone looked up {0} on CivWiki in {1} ({2})"
+                         .format(", ".join([page for page in pages[:5]]), ctx.guild.name, ctx.guild.id))
             page_list += "\n".join([url(page) for page in pages[:5]])
             if len(pages) == 1:
                 page_list = page_list.replace("<", "").replace(">", "")
