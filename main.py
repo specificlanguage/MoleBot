@@ -67,13 +67,14 @@ async def disablemole(ctx: SlashContext):
             fp.truncate(0)
             fp.write("\n".join([str(s) for s in restricted_servers]))
     else:
-        await ctx.send("Only users with administrator or manage messages permissions can use this command.")
+        await ctx.send("Only users with administrator or manage messages permissions can use this command.",
+                       hidden=True)
 
 
 @slash.slash(name="mole", description="Mole guy")
 async def mole(ctx: SlashContext):
     if ctx.guild_id in get_restricted_servers():
-        await ctx.send("The administrator has disabled moles on this server. *Sorry!*")
+        await ctx.send("The administrator has disabled moles on this server. *Sorry!*", hidden=True)
         return
     chance = random.randint(1, 100)
     if chance > 7:
@@ -110,7 +111,7 @@ async def help(ctx: SlashContext, command=""):
             out += "`" + option.get("name") + "` - " + option.get("description")
         if out != "":
             embed.add_field(name="Options", value=out)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, hidden=True)
 
     elif command == "":
         embed = Embed(title="Hi, I'm MoleBot!",
@@ -127,10 +128,10 @@ async def help(ctx: SlashContext, command=""):
         embed.add_field(name="Commands:", value="\n".join(out), inline=True)
         embed.add_field(name="Issues?", value="For any bugs, please make an issue at the GitHub at "
                                               "https://github.com/specificlanguage/MoleBot", inline=False)
-        await ctx.reply(embed=embed)
+        await ctx.reply(embed=embed, hidden=True)
 
     else:
-        await ctx.reply("Command not found. Try `/help`?")
+        await ctx.reply("Command not found. Try `/help`?", hidden=True)
 
 
 @slash.slash(name="invite", description="Spread the mole to another server")

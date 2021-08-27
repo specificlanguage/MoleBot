@@ -1,6 +1,5 @@
 from discord.ext import tasks
-from math import dist, atan2, pi
-import difflib
+from math import dist
 import json
 import requests
 import logging
@@ -16,7 +15,6 @@ class RailNode:
         self.g = 0
         self.parent = None  # must be type RailNode
         self.station = data.get("station", False)
-        self.advisory = data.get("advisory", "")
         self.switch = data.get("switch", False)
         self.badlinks = data.get("BadLinks", {})
         self.stop = not (self.station or self.switch)
@@ -102,14 +100,12 @@ async def get_aura_json():
     logging.info("Finished grabbing AURA JSON!")
 
 
+# Reconstructs the KANI pathway from the destinations
 def reconstruct_path(node: RailNode, start: RailNode):
     path = []
-    advisories = []
     if node.station and node.switch:
         path.append(node.name + ":exit")
     path.append(node.name)
-    if node.advisory != "":
-        advisories.append(node.advisory)
     tot_dist = 0
 
     while node != start:
@@ -122,9 +118,6 @@ def reconstruct_path(node: RailNode, start: RailNode):
             node = node.parent
             path.append(node.name)
 
-        if node.advisory != "":
-            advisories.append(node.advisory)
-
         new_path = []
         for i in path:
             a = (i.split(" "))
@@ -135,11 +128,10 @@ def reconstruct_path(node: RailNode, start: RailNode):
         lookup = set()
         path = [x for x in path if x not in lookup and lookup.add(x) is None]
 
-    return path[::-1], tot_dist, advisories  # need to reverse path
+    return path[::-1], tot_dist  # need to reverse path
 
 
-# IMPORTANT NOTE: this will return list of strings, not a list of nodes.
-# Currently unable to fix this due to how AURA nodes are structured.
+# Reconstructs the AURA pathway from the destinations
 def reconstruct_aura_path(node: AuraNode, start: AuraNode):
     path = []
     tot_dist = 0
@@ -147,8 +139,6 @@ def reconstruct_aura_path(node: AuraNode, start: AuraNode):
     if node.type == "junctionstop":
         path.append(node.dest_stop)
 
-    # TODO: determine line routed direction
-    # TODO: if line, recalculate distance between nodes
     last_node = None
     first_node = node
     while node != start:
@@ -211,6 +201,7 @@ def find_aura_route(start: str, end: str):
     return astar(start_node, end_node)
 
 
+# A* routing for RailNodes let's go
 def astar(start_node: RailNode, end_node: RailNode):
     if start_node == end_node:
         return [], -2
@@ -274,6 +265,17 @@ def astar(start_node: RailNode, end_node: RailNode):
             open_list.append(node)
 
     return [], 0
+
+
+# Given a dest_list, return a list of advisories from the KANI JSON.
+def get_advisories(dest_list: list[str]):
+    advisories = []
+    for s in dest_list:
+        try:
+            advisories.append(KANI_JSON[s]["advisory"])
+        except KeyError:
+            continue
+    return advisories
 
 
 def kani_node(s: str):

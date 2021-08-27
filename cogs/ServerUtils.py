@@ -71,7 +71,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         civmapurl = "<https://ccmap.github.io/#c={0},{1},r800>".format(str(x), str(z))
 
         await ctx.send("**Locations at ({0}, {1}):**\nSee also: {2} ```md\n{3}```"
-                       .format(str(x), str(z), civmapurl, out), embed=None)
+                       .format(str(x), str(z), civmapurl, out), embed=None, hidden=True)
 
     @cog_ext.cog_slash(name="civwiki",
                        description="Get a CivWiki page",
@@ -101,7 +101,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             page_list += "\n".join([url(page) for page in pages[:5]])
             if len(pages) == 1:
                 page_list = page_list.replace("<", "").replace(">", "")
-            await ctx.reply(page_list, mention_author=False)
+            await ctx.reply(page_list, mention_author=False, hidden=True)
 
     # other commands that will become part of this cog (for next release)
     # civmap [x] [y] [z] or civmap[name] to give a link to civmap
