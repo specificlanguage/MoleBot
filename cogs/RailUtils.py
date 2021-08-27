@@ -27,7 +27,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
                                               required=True)])
     async def dest(self, ctx: SlashContext, origin: str, destination: str):
         origin, destination = origin.lower(), destination.lower()
-        kani_route, kani_dist = find_kani_route(origin, destination)
+        kani_route, kani_dist, kani_notices = find_kani_route(origin, destination)
         aura_route, aura_dist = find_aura_route(origin, destination)
 
         embed = discord.Embed(title="Route from {0} to {1}:".format(origin, destination),
@@ -52,6 +52,8 @@ class RailUtils(commands.Cog, name="RailUtils"):
                 embed.add_field(name="KANI system:", value=out)
 
         elif len(kani_route) > 0:
+            notices = "\n".join(kani_notices)
+
             if kani_node(origin).switch:
                 notices += "KANI Notice: You are routing from a switch.\n"
             if kani_node(destination).switch:
@@ -61,9 +63,8 @@ class RailUtils(commands.Cog, name="RailUtils"):
             time = int(kani_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="KANI system:",
-                            value="/dest {0} \n\n Travel Time: About {1}m{2}s \n Distance: {3}m".
-                            format(kani_route, time_min, time_sec, int(kani_dist)))
-            embed.set_footer(text=notices)
+                            value="/dest {0} \n\n Travel Time: About {1}m{2}s \n Distance: {3}m \n\n {4}".
+                            format(kani_route, time_min, time_sec, int(kani_dist), notices))
 
         # Special notice that you're routing from a junction instead
         if len(aura_route) < 0:

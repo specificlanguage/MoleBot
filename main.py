@@ -76,8 +76,8 @@ async def mole(ctx: SlashContext):
         await ctx.send("The administrator has disabled moles on this server. *Sorry!*")
         return
     chance = random.randint(1, 100)
-    if chance > 5:
-        await ctx.send(file=File('resources/montymole.gif'))
+    if chance > 7:
+        await ctx.send("https://c.tenor.com/z8JgskMjeuAAAAAC/yes-monty-mole.gif")
     else:
         mole_gifs = ["https://tenor.com/view/taupe-hide-gif-5585646",
                      "https://media.giphy.com/media/MuACBobEZorb6Xyc1S/giphy.gif",
@@ -137,8 +137,8 @@ async def help(ctx: SlashContext, command=""):
 async def invite(ctx: SlashContext):
     embed = Embed(title="Help spread the word of the mole!",
                   description="Invite me to another server so they can generate dest commands,"
-                              "find where they are on CivClassic, and other features too!",
-                  thumbnail="https://c.tenor.com/AZPQZggbt_YAAAAd/monty-mole-monty.gif")
+                              "find where they are on CivClassic, and other features too!")
+    embed.set_thumbnail(url="https://c.tenor.com/AZPQZggbt_YAAAAd/monty-mole-monty.gif")
     embed.add_field(name="Invite:",
                     value="https://discord.com/api/oauth2/authorize?client_id={0}&permissions"
                           "=0&scope=bot%20applications.commands".format(os.environ.get("app_id")))

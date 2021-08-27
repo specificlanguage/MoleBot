@@ -16,6 +16,7 @@ class RailNode:
         self.g = 0
         self.parent = None  # must be type RailNode
         self.station = data.get("station", False)
+        self.advisory = data.get("advisory", "")
         self.switch = data.get("switch", False)
         self.badlinks = data.get("BadLinks", {})
         self.stop = not (self.station or self.switch)
@@ -103,9 +104,12 @@ async def get_aura_json():
 
 def reconstruct_path(node: RailNode, start: RailNode):
     path = []
-    if node.station or node.switch:
+    advisories = []
+    if node.station and node.switch:
         path.append(node.name + ":exit")
     path.append(node.name)
+    if node.advisory != "":
+        advisories.append(node.advisory)
     tot_dist = 0
 
     while node != start:
@@ -118,6 +122,9 @@ def reconstruct_path(node: RailNode, start: RailNode):
             node = node.parent
             path.append(node.name)
 
+        if node.advisory != "":
+            advisories.append(node.advisory)
+
         new_path = []
         for i in path:
             a = (i.split(" "))
@@ -128,7 +135,7 @@ def reconstruct_path(node: RailNode, start: RailNode):
         lookup = set()
         path = [x for x in path if x not in lookup and lookup.add(x) is None]
 
-    return path[::-1], tot_dist  # need to reverse path
+    return path[::-1], tot_dist, advisories  # need to reverse path
 
 
 # IMPORTANT NOTE: this will return list of strings, not a list of nodes.
