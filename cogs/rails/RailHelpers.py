@@ -1,4 +1,5 @@
 from cogs.rails.RailTraverse import KANI_JSON
+from cogs.CivMap import find_containing_poly
 from math import dist, atan2, degrees
 import difflib
 
@@ -27,8 +28,10 @@ def find_closest_dests(x: int, z: int):
                       "E", "ENE", "NE", "NNE", "N"]
         direction = directions[int(angle // 22.5)]
 
+        containing_nation = find_containing_poly(data["x"], data["z"])
+
         closest_dests.append({"name": dest, "distance": to_dist, "x": data["x"], "z": data["z"],
-                              "angle": angle, "links": links, "direction": direction})
+                              "angle": angle, "links": links, "direction": direction, "nation": containing_nation})
 
     return closest_dests
 

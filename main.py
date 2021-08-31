@@ -30,9 +30,9 @@ async def on_slash_command(message):
     command = "/" + message.name + " " + " ".join(args)
 
     if message.guild is not None:
-        logging.info("Somebody sent '{0}' in guild {1} ({2})".format(command, guild_name, message.guild_id))
+        logging.info("'{0}' was sent in guild {1} ({2})".format(command, guild_name, message.guild_id))
     else:
-        logging.info("Somebody sent '{0}' (via a DM)".format(command))
+        logging.info("'{0}' was sent via a DM".format(command))
 
 
 @bot.event
@@ -145,6 +145,7 @@ async def invite(ctx: SlashContext):
                           "=0&scope=bot%20applications.commands".format(os.environ.get("app_id")))
     embed.set_footer(text="Made by specificlanguage#2891. Contact him for more information!")
     await ctx.send(embed=embed)
+
 
 @bot.event
 async def on_guild_join(guild):

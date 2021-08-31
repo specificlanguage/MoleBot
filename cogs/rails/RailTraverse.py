@@ -82,7 +82,6 @@ async def get_kani_json():
         json.dump(k, fp)
     global KANI_JSON
     KANI_JSON = load_kani_json()
-    logging.info("Finished grabbing KANI JSON!")
 
 
 @tasks.loop(hours=3.0)
@@ -97,7 +96,6 @@ async def get_aura_json():
         json.dump(a, fp)
     global AURA_JSON
     AURA_JSON = load_aura_json()
-    logging.info("Finished grabbing AURA JSON!")
 
 
 # Reconstructs the KANI pathway from the destinations
