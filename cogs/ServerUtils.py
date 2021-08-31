@@ -54,7 +54,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             embed = discord.Embed(color=discord.Colour.red())
             embed.add_field(name="Error!",
                             value="Value of x or z-coordinate was more than 13000!")
-            await ctx.send(embed=embed)
+            await ctx.send(embed=embed, hidden=True)
             return
 
         closest = find_closest(x, z)

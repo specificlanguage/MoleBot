@@ -130,7 +130,7 @@ class RailUtils(commands.Cog, name="RailUtils"):
     async def finddests(self, ctx: SlashContext, x: int, z: int):
         dests = find_closest_dests(x, z)
         if len(dests) == 0:
-            await ctx.send("You're searching for nodes outside of the map!")
+            await ctx.send("You're searching for nodes outside of the map!", hidden=True)
             return
         out = ""
 
