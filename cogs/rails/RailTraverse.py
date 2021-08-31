@@ -102,8 +102,9 @@ async def get_aura_json():
 
 # Reconstructs the KANI pathway from the destinations
 def reconstruct_path(node: RailNode, start: RailNode):
+
     path = []
-    if node.station and node.switch:
+    if node.station:
         path.append(node.name + ":exit")
     path.append(node.name)
     tot_dist = 0
@@ -111,22 +112,22 @@ def reconstruct_path(node: RailNode, start: RailNode):
     while node != start:
         tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
         if node.name in node.parent.badlinks.keys():
-            name = node.name
-            node = node.parent
-            path.append(node.badlinks[name])
+            path.append(node.parent.badlinks.get(node.name))
         else:
-            node = node.parent
             path.append(node.name)
+        node = node.parent
 
         new_path = []
         for i in path:
-            a = (i.split(" "))
-            for j in a[::-1]:  # This is such a hacky solution and I really don't like it
+            a = i.split(" ")
+            for j in reversed(a):
                 new_path.append(j)
         path = new_path
 
         lookup = set()
         path = [x for x in path if x not in lookup and lookup.add(x) is None]
+
+    path.append(node.name)
 
     return path[::-1], tot_dist  # need to reverse path
 
