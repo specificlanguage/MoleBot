@@ -102,7 +102,7 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             page_list += "\n".join([url(page) for page in pages[:5]])
             if len(pages) == 1:
                 page_list = page_list.replace("<", "").replace(">", "")
-            await ctx.reply(page_list, mention_author=False, hidden=True)
+            await ctx.reply(page_list, mention_author=False)
 
     # other commands that will become part of this cog (for next release)
     # civmap [x] [y] [z] or civmap[name] to give a link to civmap
