@@ -102,8 +102,12 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                 out += "**{0}**\n".format(name)
 
         embed = discord.Embed(title="Name history of {0}:".format(username), description=out)
+
         embed.set_footer(text="See also: https://namemc.com/search?q={0}".format(username))
         embed.add_field(name="UUID: ", value=uuid, inline=True)
+        civwiki_page = get_civwiki_page(username)
+        if civwiki_page[1]:
+            embed.add_field(name="CivWiki Page", value=civwiki_page[0], inline=False)
         embed.set_thumbnail(url="https://crafatar.com/avatars/{0}".format(uuid))
 
         await ctx.send(embed=embed)
