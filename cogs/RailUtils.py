@@ -59,12 +59,12 @@ class RailUtils(commands.Cog, name="RailUtils"):
 
         # Route found
         elif len(kani_route) > 0:
-            notices = "".join([f"> -{i}\n" for i in kani_notices])
-
             if kani_node(origin).switch:
-                notices += "You are routing from a switch.\n"
+                notices += "You are routing from a switch."
             if kani_node(destination).switch:
-                notices += "You are routing to a switch. You will need to disembark manually.\n"
+                notices += "You are routing to a switch. You will need to disembark manually."
+
+            notices = "".join([f"\n> -{i}" for i in kani_notices])
 
             kani_route = " ".join(kani_route)
             time = int(kani_dist) // 8

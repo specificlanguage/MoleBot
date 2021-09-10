@@ -74,6 +74,40 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         await ctx.send("**Locations at ({0}, {1}):**\nSee also: {2} ```md\n{3}```"
                        .format(str(x), str(z), civmapurl, out), embed=None, hidden=True)
 
+    @cog_ext.cog_slash(name="whois",
+                       description="Find name history on a player",
+                       options=[create_option(name="username",
+                                              description="Username of user",
+                                              option_type=3,
+                                              required=True)])
+    async def whois(self, ctx: SlashContext, username: str):
+        uuid = get_uuid(username)
+        embed = discord.Embed(title="Name history of {0}:".format(username))
+        if uuid == "":
+            embed.add_field(name="Whoops!",
+                            value="This username is currently unused right now; it could have been used in the past.\n"
+                                  "Check **https://namemc.com/search?q={0}** for more information".format(username))
+            await ctx.send(embed=embed)
+            return
+        history = get_name_history(uuid)
+        out = ""
+        for item in history[::-1]:  # reverse so the oldest name is last, typical for most minecraft name history sites
+            name = item.get("name")
+            changed_at = item.get("changedToAt", 0) // 1000
+            # Mojang weirdly provides their timestamps with trailing millisecond zeroes which are never used
+            if changed_at != 0:
+                time = datetime.datetime.utcfromtimestamp(changed_at).strftime('%Y-%m-%d %H:%M:%S')
+                out += "**{0}** - changed at **{1}**\n".format(name, time)
+            else:
+                out += "**{0}**\n".format(name)
+
+        embed = discord.Embed(title="Name history of {0}:".format(username), description=out)
+        embed.set_footer(text="See also: https://namemc.com/search?q={0}".format(username))
+        embed.add_field(name="UUID: ", value=uuid, inline=True)
+        embed.set_thumbnail(url="https://crafatar.com/avatars/{0}".format(uuid))
+
+        await ctx.send(embed=embed)
+
     @cog_ext.cog_slash(name="civwiki",
                        description="Get a CivWiki page",
                        options=[create_option(name="page_name",
@@ -107,6 +141,18 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
     # other commands that will become part of this cog (for next release)
     # civmap [x] [y] [z] or civmap[name] to give a link to civmap
     # whois [player] to get a player's info from namemc or other playtime sources
+
+
+def get_uuid(name: str):
+    r = requests.get("https://api.mojang.com/users/profiles/minecraft/{0}".format(name))
+    if r.status_code != 200:
+        return ""
+    return r.json().get("id")
+
+
+def get_name_history(uuid: str):
+    r = requests.get("https://api.mojang.com/user/profiles/{0}/names".format(uuid))
+    return r.json()
 
 
 def get_civwiki_page(page_name: str):
