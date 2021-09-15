@@ -85,28 +85,29 @@ class RailUtils(commands.Cog, name="RailUtils"):
 
         # Valid route
         elif len(aura_route) > 0:
+            aura_notices = ""
             aura_origin = aura_node(origin)
             aura_dest = aura_node(destination)
             valid_stops = ["stop", "junctionstop", "stopjunction"]
 
             # Surface check
             if aura_origin.name + "-surface" in AURA_JSON["nodes"]:
-                notices += "AURA Notice: Your origin has a surface station that you may want to check for better " \
+                aura_notices += "AURA Notice: Your origin has a surface station that you may want to check for better " \
                            "routes. Add '(surface)' to your origin input.\n "
             if aura_dest.name + "-surface" in AURA_JSON["nodes"]:
-                notices += "AURA Notice: Your destination has a surface station that you may want to check for " \
+                aura_notices += "AURA Notice: Your destination has a surface station that you may want to check for " \
                            "better routes. Add '(surface)' to your destination input.\n"
 
             # Routing to a non-valid stop
             if aura_dest.type not in valid_stops:
-                notices += "AURA Notice: You are not routing to a stop.\n"
+                aura_notices += "AURA Notice: You are not routing to a stop.\n"
 
             aura_route = " ".join(aura_route)
             time = int(aura_dist) // 8
             time_min, time_sec = int(time // 60), int(time % 60)
             embed.add_field(name="AURA system:",
                             value="/dest {0} \n\n Travel Time: About {1}m{2}s \n Distance: {3}m \n\n {4}".
-                            format(aura_route, time_min, time_sec, int(aura_dist), notices))
+                            format(aura_route, time_min, time_sec, int(aura_dist), aura_notices))
 
         embed.set_footer(text="See amel.pw/kani or auracc.github.io for more information!")
 

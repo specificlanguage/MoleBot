@@ -1,5 +1,6 @@
 from discord.ext import tasks
 from math import dist
+from typing import List
 import json
 import requests
 import logging
@@ -267,7 +268,7 @@ def astar(start_node: RailNode, end_node: RailNode):
 
 
 # Given a dest_list, return a list of advisories from the KANI JSON.
-def get_advisories(dest_list: list[str]):
+def get_advisories(dest_list: List[str]):
     advisories = []
     for s in dest_list:
         try:
