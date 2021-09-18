@@ -7,6 +7,8 @@ import logging
 
 
 class RailNode:
+    """KANI object node that loads all information from file.
+    Used for pathfinding, reconstruction, and everything in between."""
     def __init__(self, name: str, data: dict):
         self.name = name
         self.x = data.get("x", 0)
@@ -21,15 +23,19 @@ class RailNode:
         self.stop = not (self.station or self.switch)
 
     def __eq__(self, other):
+        """Overrides equal to check whether the name is the same;
+        should be the only criteria as KANI nodes are unique in name."""
         return self.name == other.name
 
     def __str__(self):
+        """Returns a string for easy readability. Also adds parent support."""
         try:
             return self.name + "\n Parent: " + self.parent
         except TypeError:
             return self.name
 
     def __repr__(self):
+        """Returns a string for easy readability. Also adds parent support."""
         try:
             return self.name + "\n Parent: " + self.parent
         except TypeError:
@@ -38,11 +44,12 @@ class RailNode:
 
 # adaptation for AURA system
 class AuraNode(RailNode):
+    """AURA object node that extends support from KANI node.
+    Loads all necessary information from JSON that will or may get used later."""
     def __init__(self, name: str, data: dict):
         super().__init__(name, data)
         self.badlinks = data.get("bad_links", {})
         self.unsafelinks = data.get("unsafe_links", [])
-
         self.type = data.get("type", "")
         self.stop = self.type == "stop"
         self.dest_stop = data.get("dest_stop", "")
@@ -54,25 +61,30 @@ class AuraNode(RailNode):
 
 
 def euclid(start, end):
+    """Helper function that calculates distance."""
     return dist([start.x, start.z], [end.x, end.z])
 
 
 def taxi(start, end):
+    """Helper function that calculates distance VIA manhattan method, ie. absolute value."""
     return sum([abs(start.x - end.x), abs(start.z - end.z)])
 
 
 def load_kani_json():
+    """Helper function to load KANI_JSON from the file (may not be needed)"""
     with open("resources/kani.json", "r") as fp:
         return json.load(fp)
 
 
 def load_aura_json():
+    """Helper function to load AURA_JSON from the file (may not be needed)"""
     with open("resources/aura.json", "r") as fp:
         return json.load(fp)
 
 
 @tasks.loop(hours=3.0)
 async def get_kani_json():
+    """Coroutine that is automatically scheduled every 3 hours to grab the KANI JSON."""
     logging.info("Grabbing KANI JSON file from GitHub at "
                  "https://raw.githubusercontent.com/Ameliorate/KANI/master/docs/export.json")
 
@@ -81,12 +93,14 @@ async def get_kani_json():
     with open("resources/kani.json", "w+") as fp:
         fp.truncate(0)  # clear file to reload it
         json.dump(k, fp)
-    global KANI_JSON
+    global KANI_JSON, KANI_ALIASES
     KANI_JSON = load_kani_json()
+    KANI_ALIASES = get_aliases()
 
 
 @tasks.loop(hours=3.0)
 async def get_aura_json():
+    """Coroutine that is automatically scheduled every 3 hours to grab the AURA JSON."""
     logging.info("Grabbing AURA JSON file from Github at "
                  "https://raw.githubusercontent.com/auracc/aura-toml/main/computed.json")
 
@@ -99,9 +113,9 @@ async def get_aura_json():
     AURA_JSON = load_aura_json()
 
 
-# Reconstructs the KANI pathway from the destinations
 def reconstruct_path(node: RailNode, start: RailNode):
-
+    """Reconstructs the KANI pathway from the destinations given, after A* algorithm is called.
+     Only calculates KANI pathways."""
     path = []
     if node.station:
         path.append(node.name + ":exit")
@@ -131,8 +145,9 @@ def reconstruct_path(node: RailNode, start: RailNode):
     return path[::-1], tot_dist  # need to reverse path
 
 
-# Reconstructs the AURA pathway from the destinations
 def reconstruct_aura_path(node: AuraNode, start: AuraNode):
+    """Reconstructs the AURA pathway from the destinations given, after A* algorithm is called.
+    Only calculates AURA pathways, as more things are involved."""
     path = []
     tot_dist = 0
 
@@ -178,8 +193,8 @@ def reconstruct_aura_path(node: AuraNode, start: AuraNode):
     return path[::-1], tot_dist
 
 
-# Entry points for AURA/KANI path finding
 def find_kani_route(start: str, end: str):
+    """Entry point for KANI pathfinding, given a start and end will return the path."""
     start_node = kani_node(start)
     end_node = kani_node(end)
     if start_node is None or end_node is None:
@@ -188,6 +203,7 @@ def find_kani_route(start: str, end: str):
 
 
 def find_aura_route(start: str, end: str):
+    """Entry point for AURA pathfinding, given a start and end string it will return the path."""
     start_node = aura_node(start)
     end_node = aura_node(end)
 
@@ -203,6 +219,8 @@ def find_aura_route(start: str, end: str):
 
 # A* routing for RailNodes let's go
 def astar(start_node: RailNode, end_node: RailNode):
+    """Implementation of A* pathfinding algorithm to pathfind routes between two nodes.
+       This has the added benefit of being able to calculate destinations for AURA and KANI when necessary."""
     if start_node == end_node:
         return [], -2
 
@@ -267,8 +285,8 @@ def astar(start_node: RailNode, end_node: RailNode):
     return [], 0
 
 
-# Given a dest_list, return a list of advisories from the KANI JSON.
 def get_advisories(dest_list: List[str]):
+    """Given a dest_list, return a list of advisories from the KANI JSON."""
     advisories = []
     for s in dest_list:
         try:
@@ -278,7 +296,18 @@ def get_advisories(dest_list: List[str]):
     return advisories
 
 
+def get_aliases():
+    """Gets aliases for all KANI destinations. Run as a coroutine in get_kani_json, saves to KANI_ALIASES"""
+    alias_dict = {}
+    for key in KANI_JSON.keys():
+        alias_dict[key] = key
+        for alias in KANI_JSON[key].get("aliases", []):
+            alias_dict[alias] = key
+    return alias_dict
+
+
 def kani_node(s: str):
+    """Helper function to return a KANI type node from a string, if the string matches."""
     try:
         return RailNode(s, KANI_JSON[s])
     except KeyError:
@@ -286,6 +315,7 @@ def kani_node(s: str):
 
 
 def aura_node(s: str):
+    """Helper function to return an AURA type node from a string, if the string matches."""
     nodes = AURA_JSON.get("nodes")
     find_node = nodes.get(s)
     if find_node is not None:
@@ -303,3 +333,4 @@ def aura_node(s: str):
 
 AURA_JSON = load_aura_json()
 KANI_JSON = load_kani_json()
+KANI_ALIASES = get_aliases()

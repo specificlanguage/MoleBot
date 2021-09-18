@@ -11,7 +11,7 @@ from operator import itemgetter
 @tasks.loop(hours=3)
 async def get_settlements():
     logging.info("Grabbing CivMap data files from GitHub at "
-                 "https://raw.githubusercontent.com/ccmap/data/master/settlements.civmap.json")
+                 "https://raw.githubusercontent.com/ccmap/data/master/")
     r = requests.get("https://raw.githubusercontent.com/ccmap/data/master/settlements.civmap.json")
     s = requests.get("https://raw.githubusercontent.com/ccmap/data/master/land_claims.civmap.json")
     settlements_json = r.json().get("features")
