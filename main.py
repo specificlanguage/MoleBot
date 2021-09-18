@@ -4,7 +4,7 @@ import logging
 import os
 import random
 import requests
-import settings
+from cogs import Settings
 from discord import Intents, Embed
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
@@ -18,7 +18,7 @@ class Bot(commands.Bot):
 
 bot = Bot(intents=Intents.default())
 slash = SlashCommand(bot, sync_commands=True)
-cogs = ["RailUtils", "ServerUtils"]
+cogs = ["RailUtils", "ServerUtils", "Settings"]
 for extension in cogs:
     bot.load_extension("cogs." + extension)
 
@@ -47,27 +47,10 @@ async def on_message(message):
         await asyncio.sleep(3)
 
 
-@slash.slash(name="disablemole", description="Disable or reenables the mole guy :(")
-async def disablemole(ctx: SlashContext):
-    if ctx.guild is None:
-        await ctx.send("This can only be run in a discord.")
-    if ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_messages:
-        change_mole = settings.change_mole(ctx.guild_id)
-        if change_mole is True:
-            await ctx.send("Enabled /mole on this server. Do /disablemole again to disable it."
-                           .format(ctx.guild.name))
-        else:  # Now set to false
-            await ctx.send("Disabled /mole on this server. Do /disablemole again to enable it."
-                           .format(ctx.guild.name))
-    else:  # Admins only
-        await ctx.send("Only users with administrator or manage messages permissions can use this command.",
-                       hidden=True)
-
-
 @slash.slash(name="mole", description="Mole guy")
 async def mole(ctx: SlashContext):
     if ctx.guild is not None:
-        mole_settings = settings.get_mole(ctx.guild.id)
+        mole_settings = Settings.get_mole(ctx.guild.id)
         if mole_settings == "New server" or mole_settings is False:
             await ctx.send("The administrator has disabled moles on this server. *Sorry!*", hidden=True)
             return
@@ -149,7 +132,7 @@ async def invite(ctx: SlashContext):
 @bot.event
 async def on_guild_join(guild):
     logging.info("MoleBot has joined {0}! (id = {1})".format(guild.name, guild.id))
-    settings.change_mole(guild.id)
+    Settings.init_settings(server_id=guild.id)
 
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
@@ -161,7 +144,7 @@ async def on_guild_join(guild):
 @bot.event
 async def on_guild_remove(guild):
     logging.info("MoleBot has left {0}. (id = {1})".format(guild.name, guild.id))
-    settings.left_discord(guild.id)
+    Settings.left_discord(guild.id)
 
 
 @bot.event

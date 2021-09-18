@@ -9,6 +9,7 @@ from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 from mcstatus import MinecraftServer
 from string import whitespace
+from .Settings import get_wiki_setting
 
 
 class ServerUtils(commands.Cog, name="ServerUtils"):
@@ -74,12 +75,9 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         await ctx.send("**Locations at ({0}, {1}):**\nSee also: {2} ```md\n{3}```"
                        .format(str(x), str(z), civmapurl, out), embed=None, hidden=True)
 
-    @cog_ext.cog_slash(name="whois",
-                       description="Find name history on a player",
-                       options=[create_option(name="username",
-                                              description="Username of user",
-                                              option_type=3,
-                                              required=True)])
+    @cog_ext.cog_slash(name="whois", description="Find name history on a player",
+                       options=[create_option(name="username", description="Username of user",
+                                              option_type=3, required=True)])
     async def whois(self, ctx: SlashContext, username: str):
         uuid = get_uuid(username)
         embed = discord.Embed(title="Name history of {0}:".format(username))
@@ -112,13 +110,11 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 
         await ctx.send(embed=embed)
 
-    @cog_ext.cog_slash(name="civwiki",
-                       description="Get a CivWiki page",
-                       options=[create_option(name="page_name",
-                                              description="The CivWiki page name.",
-                                              option_type=3,
-                                              required=False)])
+    @cog_ext.cog_slash(name="civwiki", description="Get a CivWiki page",
+                       options=[create_option(name="page_name", description="The CivWiki page name.",
+                                              option_type=3, required=False)])
     async def civwiki(self, ctx: SlashContext, page_name=""):
+        """Command handler for CivWiki page."""
         if page_name == "":
             await ctx.send("**Edit CivWiki**: https://civwiki.org")
         url = "https://civwiki.org/wiki/" + page_name.replace(" ", "_")
@@ -126,6 +122,10 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 
     @commands.Cog.listener("on_message")
     async def wikipage(self, ctx):
+        """discord.py listener to check for messages"""
+
+        if not get_wiki_setting(ctx.guild.id) or ctx.author.bot or ctx.author.id == self.bot.user.id:  # Ignore self
+            return
 
         def url(s: str):
             return "https://civwiki.org/wiki/" + s.replace(" ", "_")
@@ -144,7 +144,6 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
 
     # other commands that will become part of this cog (for next release)
     # civmap [x] [y] [z] or civmap[name] to give a link to civmap
-    # whois [player] to get a player's info from namemc or other playtime sources
 
 
 def get_uuid(name: str):
