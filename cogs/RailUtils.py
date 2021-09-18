@@ -34,12 +34,19 @@ class RailUtils(commands.Cog, name="RailUtils"):
             # TODO - origin/destination are aliases or substrings of aliases
             # TODO - handle errors if none of the above work
             # TODO - also somehow avoid below
-
+        
         kani_route, kani_dist = find_kani_route(origin, destination)
         aura_route, aura_dist = find_aura_route(origin, destination)
 
+        # No routes found!
+        if len(kani_route) == 0:
+            orig_aliases, dest_aliases = find_alias(origin), find_alias(destination)
+            orig_aliases.update(names_close_to(origin))
+            dest_aliases.update(names_close_to(destination))
+            embed.add_field(name="No KANI route found!", value=handle_not_found(orig_aliases, dest_aliases))
+                
         # Routing formatting
-        if len(kani_route) > 0:
+        elif len(kani_route) > 0:
             embed.add_field(name="KANI system:", value=kani_formatting(kani_route, kani_dist))
         if len(aura_route) > 0:
             embed.add_field(name="AURA system:", value=aura_formatting(aura_route, aura_dist))

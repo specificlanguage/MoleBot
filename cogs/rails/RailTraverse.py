@@ -1,6 +1,8 @@
 from discord.ext import tasks
-from math import dist
 from typing import List
+from math import dist
+from .RailHelpers import *
+import difflib
 import json
 import requests
 import logging
@@ -198,7 +200,12 @@ def find_kani_route(start: str, end: str):
     start_node = kani_node(start)
     end_node = kani_node(end)
     if start_node is None or end_node is None:
-        return [], 0
+        start_alias = find_alias(start)
+        end_alias = find_alias(end)
+        if len(start_alias) != 1 or len(end_alias) != 1:
+            return [], 0
+        start_node = kani_node(start_alias.pop())
+        end_node = kani_node(end_alias.pop())
     return astar(start_node, end_node)
 
 
@@ -285,17 +292,6 @@ def astar(start_node: RailNode, end_node: RailNode):
     return [], 0
 
 
-def get_advisories(dest_list: List[str]):
-    """Given a dest_list, return a list of advisories from the KANI JSON."""
-    advisories = []
-    for s in dest_list:
-        try:
-            advisories.append(KANI_JSON[s]["advisory"])
-        except KeyError:
-            continue
-    return advisories
-
-
 def get_aliases():
     """Gets aliases for all KANI destinations. Run as a coroutine in get_kani_json, saves to KANI_ALIASES"""
     alias_dict = {}
@@ -330,6 +326,92 @@ def aura_node(s: str):
         return AuraNode(valid_keys[0], AURA_JSON["nodes"][valid_keys[0]])
     return None
 
+
+def find_alias(dest: str):
+    """Finds dest names close to a string. Checks for substring matching, and uses aliases."""
+    dest_list = set()
+    for key in KANI_ALIASES:
+        d = KANI_ALIASES[key]
+        if dest in key and d not in dest_list:
+            dest_list.add(d)
+
+    return dest_list
+
+
+def names_close_to(dest: str):
+    """Finds names close to a string based on difflib."""
+    close_matches = difflib.get_close_matches(dest, KANI_ALIASES.keys())
+    return set([KANI_ALIASES[key] for key in close_matches])
+
+
+def get_advisories(dest_list: List[str]):
+    """Given a dest_list, return a list of advisories from the KANI JSON."""
+    advisories = []
+    for s in dest_list:
+        try:
+            advisories.append(KANI_JSON[s]["advisory"])
+        except KeyError:
+            continue
+    return advisories
+
+
+def kani_formatting(path, dist):
+    """Formats KANI paths into readable format, succeeds RailUtils.dest functionality for KANI."""
+
+    kani_notices = get_advisories(path)
+    last = path[-1]
+    if "exit" in last:
+        last = path[-2]
+
+    if kani_node(path[0]).switch:
+        kani_notices.append("You are routing from a switch.")
+    if kani_node(last).switch:
+        kani_notices.append("You are routing to a switch. You may need to disembark manually by entering /dest.")
+
+    notices = "".join([f"\n> -{i}" for i in kani_notices])
+    route = "/dest " + " ".join(path)
+    time = int(dist) // 8
+    min, sec = int(time // 60), int(time % 60)
+    if notices != "":
+        notices = "**KANI Notice(s)**: " + notices
+    return "{0} \n\n Travel Time: about {1}min {2}sec \n Distance: {3}m \n\n {4}"\
+        .format(route, min, sec, int(dist), notices)
+
+
+def aura_formatting(path, dist):
+    """""Formats KANI paths into readable format, succeeds RailUtils.dest functionality for KANI."""
+
+    # Junction routing
+    if len(path) < 0:
+        return "*No route found. You are routing to/from a switch/destination/line in AURA.*"
+
+    elif len(path) > 0:
+        aura_notices = []
+        orig = aura_node(path[0])
+        dest = aura_node(path[-1])
+        valid_stops = ["stop", "junctionstop", "stopjunction"]
+
+        # Surface check
+        if orig.name + "-surface" in AURA_JSON["nodes"]:
+            aura_notices += "AURA Notice: Your origin has a surface station that you may want to check for better " \
+                            "routes. Add '(surface)' to your origin input."
+        if dest.name + "-surface" in AURA_JSON["nodes"]:
+            aura_notices += "AURA Notice: Your destination has a surface station that you may want to check for " \
+                            "better routes. Add '(surface)' to your destination input."
+
+        # Non-valid stop
+        if dest.type not in valid_stops:
+            aura_notices += "AURA Notice: You are not routing to a stop."
+
+        notices = "".join([f"\n> -{i}" for i in aura_notices])
+        route = "/dest " + " ".join(path)
+        time = int(dist) // 8
+        min, sec = int(time // 60), int(time % 60)
+
+        if notices != "":
+            notices = "**AURA Notice(s)**: " + notices
+        return "{0} \n\n Travel Time: about {1}min {2}sec \n Distance: {3}m \n\n {4}" \
+            .format(route, min, sec, int(dist), notices)
 
 AURA_JSON = load_aura_json()
 KANI_JSON = load_kani_json()
