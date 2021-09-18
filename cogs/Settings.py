@@ -64,14 +64,15 @@ class Settings(commands.Cog, name="Settings"):
 
 def change_mole(server_id: int):
     """Tells PostgreSQL database to update the mole setting, or just return false if it's new."""
-    set_mole_command = """UPDATE settings SET mole = %s WHERE discord_id = %s"""
+    set_mole_command = """INSERT INTO settings(discord_id, wiki) VALUES(%s, %s) ON CONFLICT DO
+                            UPDATE SET wiki = %s WHERE discord_id = %s;"""
     with conn.cursor() as curs:
         old_setting = get_mole(server_id)
         if old_setting == "New server":
             return False  # Just to notice that it's disabled as it's new.
             # Mostly for discords that used /disablemole prior to this update
         new_setting = not get_mole(server_id)
-        curs.execute(set_mole_command, [new_setting, server_id])
+        curs.execute(set_mole_command, [server_id, new_setting, new_setting, server_id])
         conn.commit()
         return new_setting
 
@@ -84,8 +85,9 @@ def get_mole(server_id: int):
         rows = curs.fetchall()
         if len(rows) == 0:  # The discord doesn't exist in the db yet because it's disabled by default.
             # This case only happens for discords that had /disablemole prior to this update.
-            set_mole_command = """INSERT INTO settings(discord_id, mole) VALUES(%s, %s)"""
-            curs.execute(set_mole_command, [server_id, False])
+            set_mole_command = """INSERT INTO settings(discord_id, mole) VALUES(%s, %s) ON CONFLICT DO
+                            UPDATE SET wiki = %s WHERE discord_id = %s;"""
+            curs.execute(set_mole_command, [server_id, False, False, server_id])
             conn.commit()
             return "New server"
     return rows[0][0]  # Takes the first result, shows the first entry in the row
@@ -99,8 +101,9 @@ def set_wiki_setting(server_id: int, setting: bool):
         if setting is None:
             rows = curs.fetchall()
             setting = not rows[0][0]
-        set_mole_command = """UPDATE settings SET wiki = %s WHERE discord_id = %s;"""
-        curs.execute(set_mole_command, [setting, server_id])
+        set_mole_command = """INSERT INTO settings(discord_id, wiki) VALUES(%s, %s) ON CONFLICT DO
+                                UPDATE SET wiki = %s WHERE discord_id = %s;"""
+        curs.execute(set_mole_command, [server_id, setting, setting, server_id])
         conn.commit()
     return setting  # Takes the first result, shows the first entry in the row
 
@@ -110,7 +113,11 @@ def get_wiki_setting(server_id: int):
     get_setting = """SELECT wiki FROM settings WHERE discord_id = %s;"""
     with conn.cursor() as curs:
         curs.execute(get_setting, [server_id])
-        return curs.fetchall()[0][0]
+        rows = curs.fetchall()
+        if len(rows) == 0:  # The discord doesn't exist in the db yet because it's disabled by default.
+            set_wiki_setting(server_id, False)
+            return False
+    return rows[0][0]
 
 
 def init_settings(server_id: int):
