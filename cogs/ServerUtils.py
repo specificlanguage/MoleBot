@@ -3,13 +3,13 @@ import discord
 import logging
 import requests
 import re
-from cogs.CivMap import find_closest, get_settlements
+from .CivMap import find_closest, get_settlements, find_containing_poly
+from .Settings import get_wiki_setting
 from discord.ext import commands
 from discord_slash import cog_ext, SlashContext
 from discord_slash.utils.manage_commands import create_option
 from mcstatus import MinecraftServer
 from string import whitespace
-from .Settings import get_wiki_setting
 
 
 class ServerUtils(commands.Cog, name="ServerUtils"):
@@ -59,6 +59,8 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             return
 
         closest = find_closest(x, z)
+        containing_nation = find_containing_poly(x, z)
+
         out = ""
         longest_len = max([len(dest["name"]) + len(dest["nation"]) + 2 for dest in closest])
         for item in closest:
@@ -71,9 +73,11 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             out += info + "\n"
 
         civmapurl = "<https://ccmap.github.io/#c={0},{1},r800>".format(str(x), str(z))
+        pretext = "**({0}, {1})** is in **".format(str(x), str(z)) + containing_nation + "**:" if containing_nation != "" \
+            else "**Locations at ({0}, {1}):**".format(str(x), str(z))
 
-        await ctx.send("**Locations at ({0}, {1}):**\nSee also: {2} ```md\n{3}```"
-                       .format(str(x), str(z), civmapurl, out), embed=None, hidden=True)
+        await ctx.send("{0}\nSee also: {1} ```md\n{2}```"
+                       .format(pretext, civmapurl, out), embed=None, hidden=True)
 
     @cog_ext.cog_slash(name="whois", description="Find name history on a player",
                        options=[create_option(name="username", description="Username of user",
