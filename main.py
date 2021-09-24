@@ -42,7 +42,8 @@ async def on_message(message):
         return
     if message.author.id == bot.user.id:  # Ignore self
         return
-    if "delusional" in message.content and "[[" not in message.content:
+    if "delusional" in message.content and "[[" not in message.content and \
+            not Settings.get_wiki_setting(message.guild.id):
         await message.channel.send("**Edit CivWiki:** https://civwiki.org")
         await asyncio.sleep(3)
 

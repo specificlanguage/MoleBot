@@ -1,11 +1,12 @@
 from discord.ext import tasks
 from typing import List
 from math import dist
+from queue import PriorityQueue
 from .RailHelpers import *
 import difflib
 import json
-import requests
 import logging
+import requests
 
 
 class RailNode:
@@ -115,7 +116,7 @@ async def get_aura_json():
     AURA_JSON = load_aura_json()
 
 
-def reconstruct_path(node: RailNode, start: RailNode):
+def reconstruct_path(node: RailNode):
     """Reconstructs the KANI pathway from the destinations given, after A* algorithm is called.
      Only calculates KANI pathways."""
     path = []
@@ -124,7 +125,7 @@ def reconstruct_path(node: RailNode, start: RailNode):
     path.append(node.name)
     tot_dist = 0
 
-    while node != start:
+    while node.parent is not None:
         tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
         if node.name in node.parent.badlinks.keys():
             path.append(node.parent.badlinks.get(node.name))
@@ -132,22 +133,22 @@ def reconstruct_path(node: RailNode, start: RailNode):
             path.append(node.name)
         node = node.parent
 
-        new_path = []
-        for i in path:
-            a = i.split(" ")
-            for j in reversed(a):
-                new_path.append(j)
-        path = new_path
-
-        lookup = set()
-        path = [x for x in path if x not in lookup and lookup.add(x) is None]
-
     path.append(node.name)
+
+    new_path = []
+    for i in path:
+        a = i.split(" ")
+        for j in reversed(a):
+            new_path.append(j)
+    path = new_path
+
+    lookup = set()
+    path = [x for x in path if x not in lookup and lookup.add(x) is None]
 
     return path[::-1], tot_dist  # need to reverse path
 
 
-def reconstruct_aura_path(node: AuraNode, start: AuraNode):
+def reconstruct_aura_path(node: AuraNode):
     """Reconstructs the AURA pathway from the destinations given, after A* algorithm is called.
     Only calculates AURA pathways, as more things are involved."""
     path = []
@@ -155,10 +156,18 @@ def reconstruct_aura_path(node: AuraNode, start: AuraNode):
 
     if node.type == "junctionstop":
         path.append(node.dest_stop)
+    if node.dest == "":
+        path.append(node.name)
+    else:
+        path.append(node.dest)
+
+    print(path)
 
     last_node = None
     first_node = node
-    while node != start:
+
+    while node.parent is not None:
+        print(node, node.parent)
         tot_dist += (euclid(node, node.parent) + taxi(node, node.parent)) / 2
 
         if node.type == "line":
@@ -185,13 +194,12 @@ def reconstruct_aura_path(node: AuraNode, start: AuraNode):
         last_node = node  # in case for lines
         node = node.parent
 
-        lookup = set()
-        path = [x for x in path if x not in lookup and lookup.add(x) is None]
-
     # Special case when the first stop needs to access a line to get on the system
-    if node.link_dests:
+    if last_node.type == "line":
         path.append(node.link_dests.get(last_node.name, ""))
 
+    lookup = set()
+    path = [x for x in path if x not in lookup and lookup.add(x) is None]
     return path[::-1], tot_dist
 
 
@@ -201,11 +209,17 @@ def find_kani_route(start: str, end: str):
     end_node = kani_node(end)
     if start_node is None or end_node is None:
         start_alias = find_alias(start)
-        end_alias = find_alias(end)
-        if len(start_alias) != 1 or len(end_alias) != 1:
+        if len(start_alias) != 1:
             return [], 0
         start_node = kani_node(start_alias.pop())
+
+    if end_node is None:
+        end_alias = find_alias(end)
+        if len(end_alias) != 1:
+            return [], 0
         end_node = kani_node(end_alias.pop())
+
+    print(start_node, end_node)
     return astar(start_node, end_node)
 
 
@@ -221,73 +235,70 @@ def find_aura_route(start: str, end: str):
     if start_node.type in incorrect_types or end_node.type in incorrect_types:
         return [], -1  # not a valid pair
 
-    return astar(start_node, end_node)
+    return astar(start_node, end_node, aura_routing=True)
 
 
-# A* routing for RailNodes let's go
-def astar(start_node: RailNode, end_node: RailNode):
+# Adapted from pseudocode at https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
+def astar(start_node: RailNode, end_node: RailNode, aura_routing=False):
     """Implementation of A* pathfinding algorithm to pathfind routes between two nodes.
        This has the added benefit of being able to calculate destinations for AURA and KANI when necessary."""
     if start_node == end_node:
         return [], -2
 
-    open_list = [start_node]
-    closed_list = []
+    # TODO: Is there are need for node objects anymore?
+    # Priority queue implemented as the heapdict package; this particular package allows us to change priorities.
 
-    def find_lowest_node(conns: iter):
-        best_node = None
-        best_f = 0
+    # This stores f & g scores for us so it's not in the nodes.
+    open_list = {start_node.name: {"node": start_node, "f": euclid(start_node, end_node), "g": 0}}
+    closed_list = {}
 
-        for dest in conns:
-            if dest.f == 0.0:
-                dest.f = euclid(start_node, dest) + euclid(dest, end_node)
-            if best_f == 0.0 or dest.f < best_f:
-                best_node = dest
-                best_f = dest.f
+    def edgeLen(start: RailNode, end: RailNode):
+        return (taxi(start, end) + euclid(start, end)) / 2
 
-        return best_node
+    def find_next_node():
+        return min(open_list, key=lambda k: open_list[k]["f"])
 
-    while len(open_list) != 0:
-        current_node = find_lowest_node(open_list)  # find lowest fscore
-        open_list.remove(current_node)  # remove current node from open list
-        closed_list.append(current_node)  # add to closed list (to prevent backtracking)
+    def get_node(name, current_node):
+        if aura_routing:
+            a = aura_node(name)
+            if a.type == "line":
+                a.x, a.z = current_node.x, current_node.z
+            return a
+        return kani_node(name)
+
+    while not len(open_list) == 0:
+        current_name = find_next_node()
+        current = open_list.pop(current_name)
+        closed_list.update({current_name: current})
+        current_node, f, g = current["node"], current["f"], current["g"]
 
         # If we've reached our destination no need to continue
         if current_node == end_node:
-            if type(current_node) is AuraNode:  # was an AURA workflow
-                return reconstruct_aura_path(current_node, start_node)
-            return reconstruct_path(current_node, start_node)
+            if type(current_node) == AuraNode:
+                return reconstruct_aura_path(current_node)
+            return reconstruct_path(current_node)
 
         # Can't leave node, only applicable as destination
         if current_node.stop and current_node != start_node:
             continue
 
-        # For every connection in the nodes
-        for node in current_node.links:
-            if type(current_node) is AuraNode:
-                node = aura_node(node)
-                if node.type == "line":
-                    # in order to make proper calculations, just have it be the same location.
-                    node.x = current_node.x
-                    node.z = current_node.z
+        for link in current_node.links:
+            if link in closed_list:  # This is a literal copout so AURA can work correctly
+                continue
+            if link in open_list:
+                link_node = open_list[link]["node"]
+                link_g = open_list[link]["g"]
             else:
-                node = kani_node(node)
+                link_node = get_node(link, current_node)
+                link_g = -1
 
-            # Skip if already in closed/open, or it's not a good link
-            if node in closed_list or node in open_list:
-                continue
-            if type(current_node) is AuraNode and node.name in current_node.unsafelinks:
-                continue
-
-            # Initialize g score if not already
-            if current_node.g == 0:
-                current_node.g = euclid(start_node, current_node)
-
-            # Add links & score
-            node.parent = current_node
-            node.g = current_node.g + euclid(current_node, node)
-            node.f = node.g + euclid(node, end_node)
-            open_list.append(node)
+            tentative_gscore = g + edgeLen(current_node, link_node)
+            if link_g == -1 or tentative_gscore < link_g:
+                link_node.parent = current_node
+                new_dict = {"node": link_node,
+                 "f": tentative_gscore + euclid(link_node, end_node),
+                 "g": tentative_gscore}
+                open_list.update({link: new_dict})
 
     return [], 0
 
