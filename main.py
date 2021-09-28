@@ -25,6 +25,7 @@ for extension in cogs:
 
 @bot.event
 async def on_slash_command(message):
+    """Handler to log slash commands in console."""
     guild_name = bot.get_guild(message.guild_id)
     kwargs = message.kwargs
     args = [key + ":" + str(kwargs[key]) for key in kwargs.keys()]
@@ -38,6 +39,7 @@ async def on_slash_command(message):
 
 @bot.event
 async def on_message(message):
+    """Handler to do various funny things or ignoring of commands from console."""
     if message.author.bot:
         return
     if message.author.id == bot.user.id:  # Ignore self
@@ -50,6 +52,7 @@ async def on_message(message):
 
 @slash.slash(name="mole", description="Mole guy")
 async def mole(ctx: SlashContext):
+    """Handler for the /mole command, which literally spits out a mole because it's fun"""
     if ctx.guild is not None:
         mole_settings = Settings.get_mole(ctx.guild.id)
         if mole_settings == "New server" or mole_settings is False:
@@ -77,6 +80,7 @@ async def mole(ctx: SlashContext):
                                     option_type=3,
                                     required=False)])
 async def help(ctx: SlashContext, command=""):
+    """Displays a help command, and gives all commands/and also give other commands from the options."""
     url = "https://discord.com/api/v8/applications/{0}/commands".format(os.environ.get("app_id"))
     header = {"Authorization": "Bot " + os.environ.get("token")}
     r = requests.get(url, headers=header)
@@ -119,6 +123,7 @@ async def help(ctx: SlashContext, command=""):
 
 @slash.slash(name="invite", description="Spread the mole to another server")
 async def invite(ctx: SlashContext):
+    """Command handler to send an invite link"""
     embed = Embed(title="Help spread the word of the mole!",
                   description="Invite me to another server so they can generate dest commands,"
                               "find where they are on CivClassic, and other features too!")
@@ -132,6 +137,7 @@ async def invite(ctx: SlashContext):
 
 @bot.event
 async def on_guild_join(guild):
+    """Handler to set basic permissions, logging upon joining a new server."""
     logging.info("MoleBot has joined {0}! (id = {1})".format(guild.name, guild.id))
     Settings.init_settings(server_id=guild.id)
 
@@ -144,12 +150,14 @@ async def on_guild_join(guild):
 
 @bot.event
 async def on_guild_remove(guild):
+    """Handler to remove permissions, log upon leaving a server."""
     logging.info("MoleBot has left {0}. (id = {1})".format(guild.name, guild.id))
     Settings.left_discord(guild.id)
 
 
 @bot.event
 async def on_ready():
+    """Just a base command to let you know MoleBot booted correctly"""
     logging.info("MoleBot is ready!")
 
 logger = log.init_logger()

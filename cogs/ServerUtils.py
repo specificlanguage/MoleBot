@@ -17,14 +17,12 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
         self.bot = bot
         get_settlements.start()
 
-    @cog_ext.cog_slash(name="ping",
-                       description="Ping the default server or another server",
-                       options=[create_option(name="server_ip",
-                                              description="Enter a server IP (will default to CivClassic)",
-                                              option_type=3,
-                                              required=False)])
+    @cog_ext.cog_slash(name="ping", description="Ping the default server or another server",
+                       options=[create_option(name="server_ip", description="Enter a server IP (will default to CivClassic)",
+                                              option_type=3, required=False)])
     async def ping(self, ctx: SlashContext, server_ip="mc.civclassic.com"):
-        # This feels very tacky, may want to change this later
+        """Command handler to ping a Minecraft server from the discord server"""
+
         server = MinecraftServer.lookup(server_ip)
         try:
             status = server.status()
@@ -33,24 +31,19 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
             embed.add_field(name="Players Online",
                             value="**{0}/{1}**".format(status.players.online, status.players.max))
             embed.add_field(name="Latency", value="**{0}** ms".format(status.latency))
-            embed.add_field(name="MOTD", value=status.description)
+            embed.add_field(name="Description", value=re.sub('§\S', '', status.description))
             embed.set_footer(text="Pinged at {0} UTC".format(datetime.datetime.utcnow().strftime("%m/%d/%Y, %H:%M:%S")))
             # set image of icon (if there is one)
             await ctx.send(embed=embed)
         except:
             await ctx.send("Could not find **" + server_ip + "**, it's either offline or non-existent.")
 
-    @cog_ext.cog_slash(name="whereis",
-                       description="Finds closest locations in CivClassic",
-                       options=[create_option(name="x",
-                                              description="CivClassic x-coordinate",
-                                              option_type=4,
-                                              required=True),
-                                create_option(name="z",
-                                              description="CivClassic z-coordinate",
-                                              option_type=4,
-                                              required=True)])
+    @cog_ext.cog_slash(name="whereis",description="Finds closest locations in CivClassic",
+                       options=[create_option(name="x", description="CivClassic x-coordinate", option_type=4, required=True),
+                                create_option(name="z", description="CivClassic z-coordinate", option_type=4, required=True)])
     async def whereis(self, ctx: SlashContext, x: int, z: int):
+        """Command handler to look up a set of coordinates from CivClassic"""
+
         if abs(x) > 13000 or abs(z) > 13000:
             embed = discord.Embed(color=discord.Colour.red())
             embed.add_field(name="Error!",
@@ -83,6 +76,8 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
                        options=[create_option(name="username", description="Username of user",
                                               option_type=3, required=True)])
     async def whois(self, ctx: SlashContext, username: str):
+        """Command handler to look up a username (find their name history, skin, etc.)"""
+
         uuid = get_uuid(username)
         embed = discord.Embed(title="Name history of {0}:".format(username))
         if uuid == "":

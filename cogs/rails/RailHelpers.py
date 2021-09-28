@@ -38,6 +38,7 @@ def find_closest_dests(x: int, z: int):
 
 
 def handle_not_found(orig: set, dest: set):
+    """Handling helper command to return strings when an origin/destination is not found!"""
     out = ""
     if len(orig) == 0:
         out += "**Error**: Origin station not found!\n"

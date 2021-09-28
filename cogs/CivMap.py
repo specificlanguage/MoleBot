@@ -10,6 +10,7 @@ from operator import itemgetter
 
 @tasks.loop(hours=3)
 async def get_settlements():
+    """Task function, which runs ~3hrs to get CivMap settlement/claims jsons from the CCMap repository"""
     logging.info("Grabbing CivMap data files from GitHub at "
                  "https://raw.githubusercontent.com/ccmap/data/master/")
     r = requests.get("https://raw.githubusercontent.com/ccmap/data/master/settlements.civmap.json")
@@ -28,12 +29,14 @@ async def get_settlements():
 
 
 def load_settlements():
+    """Helper function to load settlements from the json (after loading it)"""
     with open("resources/settlements.json", "r") as fp:
         return json.load(fp)
 
 
 # Unlike all the other load functions, this transforms the list of features into a json with all polygons.
 def load_claims():
+    """Helper function to load claims from the json (and also load the polygons correctly)"""
     claims = []
     with open("resources/claims.json", "r") as fp:
         claims_json = json.load(fp)
@@ -49,6 +52,8 @@ claims = load_claims()  # structure: [{name: str, claim: polygon}]
 
 
 def find_closest(x: int, z: int):
+    """Finds the closest ten settlements from a given location."""
+    # TODO: Ensure there is at least one major settlement in the return statement!
     distances = {}
     for entry in settlements:
         name = entry.get("name")
@@ -83,10 +88,10 @@ def find_closest(x: int, z: int):
     return closest_settlements
 
 
-# This function finds whether the polygon contains a point given in here.
-# CivMap, while not susceptible to overlaps, should be generally OK for the purpose of looking up stations.
-# If this gets used for something later down the line, such as for /whereis, this would be used.
+# CivMap, while not completely susceptible to overlapping claims,
+# is generally pretty good about maintaining claims polygons.
 def find_containing_poly(x: int, z: int):
+    """This function finds whether the polygon contains a point given in here."""
     global claims
     for c in claims:
         polys = c.get("claim")
@@ -97,7 +102,6 @@ def find_containing_poly(x: int, z: int):
     return ""
 
 
-# TODO for next release: ensure there is at least one major settlement in the list
 # TODO for next release: /civmap [name] to get a structure and basic info (if it exists)
 
 

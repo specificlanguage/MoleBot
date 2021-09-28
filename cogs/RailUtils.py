@@ -29,12 +29,6 @@ class RailUtils(commands.Cog, name="RailUtils"):
         if origin == destination:
             embed.add_field(name="No route found!", value="You can't have the same origin and destination!")
 
-        # TODO Check if origin/destination have nodes:
-            # TODO - origin/destination exist
-            # TODO - origin/destination are aliases or substrings of aliases
-            # TODO - handle errors if none of the above work
-            # TODO - also somehow avoid below
-        
         kani_route, kani_dist = find_kani_route(origin, destination)
         aura_route, aura_dist = find_aura_route(origin, destination)
 

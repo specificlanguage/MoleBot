@@ -4,6 +4,7 @@ import os
 
 
 def init_logger():
+    """Initializes the log files upon startup."""
     if not os.path.exists("logs/"):
         os.makedirs("logs/")
 

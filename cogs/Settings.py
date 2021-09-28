@@ -1,3 +1,4 @@
+import discord
 import os
 import psycopg2 as pg
 from discord.ext import commands
@@ -17,24 +18,30 @@ class Settings(commands.Cog, name="Settings"):
         """Command handler for /disablemole, superceded task to 'modify_mole'"""
         await modify_mole(ctx)
 
+    @cog_ext.cog_slash(name="config", description="Show/select settings")
+    async def config(self, ctx: SlashContext):
+        """Top-level command for config commands"""
+        mole_setting = get_mole(ctx.guild.id)
+        wiki_setting = get_wiki_setting(ctx.guild.id)
+        embed = discord.Embed(title="Current settings:", description="`/mole`: {0}\n`/wiki` output: {1}"
+                              .format(str(mole_setting), str(wiki_setting)))
+        embed.set_footer(text="To change settings, do `/config mole` or `/config wiki`.")
+        await ctx.send(embed=embed)
+
+
     @cog_ext.cog_subcommand(base="config", name="mole", description="Change /mole behavior")
     async def config_mole(self, ctx: SlashContext):
         """Command handler for mole subcommand of config, superceded task to 'modify_mole_'."""
         await modify_mole(ctx)
 
-    @cog_ext.cog_subcommand(base="config", name="wiki", description="Change CivWiki query behavior",
-                            options=[create_option(name="setting", description="Optional true/false setting",
-                                                   option_type=5, required=False)])
-    async def config_wiki(self, ctx: SlashContext, **setting):
+    @cog_ext.cog_subcommand(base="config", name="wiki", description="Change CivWiki query behavior")
+    async def config_wiki(self, ctx: SlashContext):
         """Command handler for CivWiki subcommand of config, calls subroutines to set wiki value.
            Either disables or enables [[wiki querying]] in this subcommand, but does not disable /civwiki."""
         if ctx.guild is None:
             await ctx.send("This can only be run in a discord.")
         if ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_messages:
-            try:
-                setting = setting.get("setting")
-            except KeyError:
-                setting = not get_wiki_setting(ctx.guild.id)
+            setting = not get_wiki_setting(ctx.guild.id)
             new_setting = set_wiki_setting(server_id=ctx.guild.id, setting=setting)
             if new_setting:
                 await ctx.send("Enabled [[ wiki querying ]] on this server. Do `/config wiki {setting}` to change it \
