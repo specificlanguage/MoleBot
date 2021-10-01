@@ -4,7 +4,8 @@ import logging
 import os
 import random
 import requests
-from discord import Intents, File, Embed
+from cogs import Settings
+from discord import Intents, Embed
 from discord.ext import commands
 from discord_slash import SlashCommand, SlashContext
 from discord_slash.utils.manage_commands import create_option
@@ -17,74 +18,60 @@ class Bot(commands.Bot):
 
 bot = Bot(intents=Intents.default())
 slash = SlashCommand(bot, sync_commands=True)
-cogs = ["RailUtils", "ServerUtils"]
+cogs = ["RailUtils", "ServerUtils", "Settings"]
 for extension in cogs:
     bot.load_extension("cogs." + extension)
 
 
 @bot.event
 async def on_slash_command(message):
+    """Handler to log slash commands in console."""
     guild_name = bot.get_guild(message.guild_id)
     kwargs = message.kwargs
     args = [key + ":" + str(kwargs[key]) for key in kwargs.keys()]
     command = "/" + message.name + " " + " ".join(args)
 
     if message.guild is not None:
-        logging.info("Somebody sent '{0}' in guild {1} ({2})".format(command, guild_name, message.guild_id))
+        logging.info("'{0}' was sent in guild {1} ({2})".format(command, guild_name, message.guild_id))
     else:
-        logging.info("Somebody sent '{0}' (via a DM)".format(command))
+        logging.info("'{0}' was sent via a DM".format(command))
 
 
 @bot.event
 async def on_message(message):
+    """Handler to do various funny things or ignoring of commands from console."""
     if message.author.bot:
         return
     if message.author.id == bot.user.id:  # Ignore self
         return
-    if "delusional" in message.content and "[[" not in message.content:
+    if "delusional" in message.content and "[[" not in message.content and \
+            not Settings.get_wiki_setting(message.guild.id):
         await message.channel.send("**Edit CivWiki:** https://civwiki.org")
         await asyncio.sleep(3)
 
 
-@slash.slash(name="disablemole", description="Disable or reenables the mole guy :(")
-async def disablemole(ctx: SlashContext):
-    if ctx.guild is None:
-        await ctx.send("This can only be run in a discord.")
-    if ctx.author.guild_permissions.administrator or ctx.author.guild_permissions.manage_messages:
-        restricted_servers = get_restricted_servers()
-        if ctx.guild_id not in restricted_servers:
-            restricted_servers.append(ctx.guild_id)
-            logging.info("{0} ({1}) disabled moles.".format(ctx.guild.name, ctx.guild_id))
-            await ctx.send("Added '{0}' to the list of disabled mole servers. Do /disablemole again to reenable it."
-                           .format(ctx.guild.name))
-        elif ctx.guild_id in restricted_servers:
-            restricted_servers.remove(ctx.guild_id)
-            logging.info("{0} ({1}) enabled moles.".format(ctx.guild.name, ctx.guild_id))
-            await ctx.send("Removed {0} from the list of disabled mole servers. Do /disablemole again to redisable "
-                           "it. "
-                           .format(ctx.guild.name))
-        with open("resources/config.txt", mode="w+") as fp:
-            fp.truncate(0)
-            fp.write("\n".join([str(s) for s in restricted_servers]))
-    else:
-        await ctx.send("Only users with administrator or manage messages permissions can use this command.")
-
-
 @slash.slash(name="mole", description="Mole guy")
 async def mole(ctx: SlashContext):
-    if ctx.guild_id in get_restricted_servers():
-        await ctx.send("The administrator has disabled moles on this server. *Sorry!*")
-        return
+    """Handler for the /mole command, which literally spits out a mole because it's fun"""
+    if ctx.guild is not None:
+        mole_settings = Settings.get_mole(ctx.guild.id)
+        if mole_settings == "New server" or mole_settings is False:
+            await ctx.send("The administrator has disabled moles on this server. *Sorry!*", hidden=True)
+            return
     chance = random.randint(1, 100)
-    if chance > 5:
-        await ctx.send(file=File('resources/montymole.gif'))
-    else:
+    if chance <= 5:
         mole_gifs = ["https://tenor.com/view/taupe-hide-gif-5585646",
                      "https://media.giphy.com/media/MuACBobEZorb6Xyc1S/giphy.gif",
                      "https://media.giphy.com/media/LFnXTvOR49SZa/giphy.gif",
                      "https://tenor.com/view/mole-deal-withit-naked-mole-rat-gif-12749507",
-                     "https://c.tenor.com/iK1zcO0bcUQAAAAC/mole-monty-mole.gif"]
+                     "https://c.tenor.com/iK1zcO0bcUQAAAAC/mole-monty-mole.gif",
+                     "https://media.giphy.com/media/n3sCOv1J7AKknd0zVX/giphy.gif",
+                     "https://c.tenor.com/KOoh92LGypQAAAAM/monty-mole-monty_mole.gif",
+                     "https://c.tenor.com/AZPQZggbt_YAAAAM/monty-mole-monty.gif",
+                     "https://c.tenor.com/MO81qAF59TYAAAAM/monty-mole-the-winner.gif"]
         await ctx.send(random.choice(mole_gifs))
+    else:
+        await ctx.send("https://c.tenor.com/z8JgskMjeuAAAAAC/yes-monty-mole.gif")
 
 
 @slash.slash(name="help", description="Help!",
@@ -93,6 +80,7 @@ async def mole(ctx: SlashContext):
                                     option_type=3,
                                     required=False)])
 async def help(ctx: SlashContext, command=""):
+    """Displays a help command, and gives all commands/and also give other commands from the options."""
     url = "https://discord.com/api/v8/applications/{0}/commands".format(os.environ.get("app_id"))
     header = {"Authorization": "Bot " + os.environ.get("token")}
     r = requests.get(url, headers=header)
@@ -110,7 +98,7 @@ async def help(ctx: SlashContext, command=""):
             out += "`" + option.get("name") + "` - " + option.get("description")
         if out != "":
             embed.add_field(name="Options", value=out)
-        await ctx.send(embed=embed)
+        await ctx.send(embed=embed, hidden=True)
 
     elif command == "":
         embed = Embed(title="Hi, I'm MoleBot!",
@@ -127,66 +115,50 @@ async def help(ctx: SlashContext, command=""):
         embed.add_field(name="Commands:", value="\n".join(out), inline=True)
         embed.add_field(name="Issues?", value="For any bugs, please make an issue at the GitHub at "
                                               "https://github.com/specificlanguage/MoleBot", inline=False)
-        await ctx.reply(embed=embed)
+        await ctx.reply(embed=embed, hidden=True)
 
     else:
-        await ctx.reply("Command not found. Try `/help`?")
+        await ctx.reply("Command not found. Try `/help`?", hidden=True)
 
 
 @slash.slash(name="invite", description="Spread the mole to another server")
 async def invite(ctx: SlashContext):
+    """Command handler to send an invite link"""
     embed = Embed(title="Help spread the word of the mole!",
                   description="Invite me to another server so they can generate dest commands,"
-                              "find where they are on CivClassic, and other features too!",
-                  thumbnail="https://c.tenor.com/AZPQZggbt_YAAAAd/monty-mole-monty.gif")
+                              "find where they are on CivClassic, and other features too!")
+    embed.set_thumbnail(url="https://c.tenor.com/AZPQZggbt_YAAAAd/monty-mole-monty.gif")
     embed.add_field(name="Invite:",
                     value="https://discord.com/api/oauth2/authorize?client_id={0}&permissions"
                           "=0&scope=bot%20applications.commands".format(os.environ.get("app_id")))
     embed.set_footer(text="Made by specificlanguage#2891. Contact him for more information!")
     await ctx.send(embed=embed)
 
+
 @bot.event
 async def on_guild_join(guild):
+    """Handler to set basic permissions, logging upon joining a new server."""
     logging.info("MoleBot has joined {0}! (id = {1})".format(guild.name, guild.id))
-    restricted_servers = get_restricted_servers()
-    restricted_servers.append(guild.id)
-    with open("resources/config.txt", mode="w+") as fp:
-        fp.truncate(0)
-        fp.write("\n".join([str(s) for s in restricted_servers]))
+    Settings.init_settings(server_id=guild.id)
 
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
             await channel.send("Hi, I'm MoleBot! Type /help to see what I do. "
-                               "(and don't worry. I've disabled /mole on this server.)")
+                               "(and don't worry. I've disabled /mole on this server by default.)")
             break
 
 
 @bot.event
 async def on_guild_remove(guild):
+    """Handler to remove permissions, log upon leaving a server."""
     logging.info("MoleBot has left {0}. (id = {1})".format(guild.name, guild.id))
-    restricted_servers = get_restricted_servers()
-    try:
-        restricted_servers.remove(guild.id)
-        with open("resources/config.txt", mode="w+") as fp:
-            fp.truncate(0)
-            fp.write("\n".join([str(s) for s in restricted_servers]))
-    except ValueError:
-        return
+    Settings.left_discord(guild.id)
 
 
 @bot.event
 async def on_ready():
+    """Just a base command to let you know MoleBot booted correctly"""
     logging.info("MoleBot is ready!")
-
-
-def get_restricted_servers():
-    restricted_servers = []
-    if os.path.exists("resources/config.txt") and os.stat("resources/config.txt").st_size != 0:
-        with open("resources/config.txt", mode="r") as fp:
-            restricted_servers = fp.readlines()
-    restricted_servers = [int(s) if s[-1] != "\n" else int(s[:-1]) for s in restricted_servers]
-    return restricted_servers
-
 
 logger = log.init_logger()
 bot.run(os.environ.get("token"))
