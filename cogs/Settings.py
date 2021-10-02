@@ -132,12 +132,6 @@ def get_wiki_setting(server_id: int):
 def init_settings(server_id: int):
     """Initializes settings upon a new server entering."""
     with conn.cursor() as curs:
-        curs.execute("""SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_schema='public');""")
-        rows = curs.fetchall()
-        if len(rows) == 0:
-            curs.execute("""create table settings(discord_id bigint, mole boolean default false,
-            wiki boolean default false);""")
-            curs.execute("""create unique index table_name_discord_id_uindex on settings (discord_id);""")
         curs.execute("""INSERT INTO settings(discord_id) VALUES (%s);""", [server_id])
 
 
@@ -154,3 +148,12 @@ def left_discord(server_id: int):
 
 def setup(bot):
     bot.add_cog(Settings(bot))
+
+# Initial setup in case of new database
+with conn.cursor() as curs:
+    curs.execute("""SELECT EXISTS(SELECT * FROM information_schema.tables WHERE table_schema='public');""")
+    rows = curs.fetchall()
+    if len(rows) == 0:
+        curs.execute("""create table settings(discord_id bigint, mole boolean default false,
+        wiki boolean default false);""")
+        curs.execute("""create unique index table_name_discord_id_uindex on settings (discord_id);""")
