@@ -93,7 +93,7 @@ async def get_mole(server_id: int):
 
     conn = await apg.connect(dsn=DB_URL)
     async with conn.transaction() as tr:
-        rows = await conn.fetchrow(get_setting, server_id)
+        rows = await conn.fetch(get_setting, server_id)
         if len(rows) == 0:  # The discord doesn't exist in the db yet because it's disabled by default.
             set_mole_command = """INSERT INTO settings(discord_id, mole) VALUES($1, $2) ON CONFLICT (discord_id) DO
                             UPDATE SET wiki = $3;"""
@@ -108,7 +108,7 @@ async def set_wiki_setting(server_id: int, setting: bool):
 
     conn = await apg.connect(dsn=DB_URL)
     async with conn.transaction() as tr:
-        rows = await conn.fetchall(get_setting, server_id)
+        rows = await conn.fetch(get_setting, server_id)
         if len(rows) == 0:
             setting = not rows[0][0]
         set_mole_command = """INSERT INTO settings(discord_id, wiki) VALUES($1, $2) ON CONFLICT (discord_id) DO
@@ -123,7 +123,7 @@ async def get_wiki_setting(server_id: int):
 
     conn = await apg.connect(dsn=DB_URL)
     async with conn.transaction() as tr:
-        rows = await conn.fetchall(get_setting, server_id)
+        rows = await conn.fetch(get_setting, server_id)
         if len(rows) == 0:  # The discord doesn't exist in the db yet because it's disabled by default.
             await set_wiki_setting(server_id, False)
             return False
