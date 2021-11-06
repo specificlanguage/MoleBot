@@ -123,7 +123,8 @@ class ServerUtils(commands.Cog, name="ServerUtils"):
     async def wikipage(self, ctx):
         """discord.py listener to check for messages"""
 
-        if not get_wiki_setting(ctx.guild.id) or ctx.author.bot or ctx.author.id == self.bot.user.id:  # Ignore self
+        if not await get_wiki_setting(ctx.guild.id) or \
+                ctx.author.bot or ctx.author.id == self.bot.user.id:  # Ignore self
             return
 
         def url(s: str):

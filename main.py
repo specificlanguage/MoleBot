@@ -54,7 +54,7 @@ async def on_message(message):
 async def mole(ctx: SlashContext):
     """Handler for the /mole command, which literally spits out a mole because it's fun"""
     if ctx.guild is not None:
-        mole_settings = Settings.get_mole(ctx.guild.id)
+        mole_settings = await Settings.get_mole(ctx.guild.id)
         if mole_settings == "New server" or mole_settings is False:
             await ctx.send("The administrator has disabled moles on this server. *Sorry!*", hidden=True)
             return
@@ -139,7 +139,7 @@ async def invite(ctx: SlashContext):
 async def on_guild_join(guild):
     """Handler to set basic permissions, logging upon joining a new server."""
     logging.info("MoleBot has joined {0}! (id = {1})".format(guild.name, guild.id))
-    Settings.init_settings(server_id=guild.id)
+    await Settings.init_settings(server_id=guild.id)
 
     for channel in guild.text_channels:
         if channel.permissions_for(guild.me).send_messages:
@@ -152,7 +152,7 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     """Handler to remove permissions, log upon leaving a server."""
     logging.info("MoleBot has left {0}. (id = {1})".format(guild.name, guild.id))
-    Settings.left_discord(guild.id)
+    await Settings.left_discord(guild.id)
 
 
 @bot.event
